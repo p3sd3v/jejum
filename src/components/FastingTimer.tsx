@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { startNewFast, endCurrentFast, getActiveFast, type FastingSession } from '@/actions/fastingActions';
+import { startNewFast, endCurrentFast, getActiveFast, type ClientFastingSession } from '@/actions/fastingActions'; // Use ClientFastingSession
 import { getUserProfile, type UserProfile } from '@/actions/userProfileActions';
 import { PlayCircle, StopCircle, Hourglass, Loader2, Target } from 'lucide-react';
-import { Timestamp } from 'firebase/firestore';
+// Timestamp is not needed here anymore as we use ISO strings and convert to Date
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import {
@@ -35,7 +35,7 @@ const formatTime = (totalSeconds: number): string => {
 const FastingTimer: React.FC = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
-  const [activeFast, setActiveFast] = useState<FastingSession | null>(null);
+  const [activeFast, setActiveFast] = useState<ClientFastingSession | null>(null); // Use ClientFastingSession
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -54,7 +54,7 @@ const FastingTimer: React.FC = () => {
       setActiveFast(currentFast);
       if (currentFast) {
         const now = new Date();
-        const start = currentFast.startTime.toDate();
+        const start = new Date(currentFast.startTime); // Convert ISO string to Date
         setElapsedSeconds(Math.floor((now.getTime() - start.getTime()) / 1000));
       } else {
         setElapsedSeconds(0);

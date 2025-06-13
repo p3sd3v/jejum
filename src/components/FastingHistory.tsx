@@ -2,7 +2,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getFastingHistory, type FastingSession } from '@/actions/fastingActions';
+import { getFastingHistory, type ClientFastingSession } from '@/actions/fastingActions'; // Use ClientFastingSession
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { UtensilsCrossed, CheckCircle2, CalendarDays, Clock } from 'lucide-react
 
 const FastingHistory: React.FC = () => {
   const { currentUser } = useAuth();
-  const [history, setHistory] = useState<FastingSession[]>([]);
+  const [history, setHistory] = useState<ClientFastingSession[]>([]); // Use ClientFastingSession
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -73,11 +73,13 @@ const FastingHistory: React.FC = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-semibold text-foreground">
-                      {format(session.startTime.toDate(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {/* Convert ISO string to Date before formatting */}
+                      {format(new Date(session.startTime), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                     </p>
                     {session.endTime && (
                        <p className="text-xs text-muted-foreground">
-                        Finalizado em: {format(session.endTime.toDate(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        {/* Convert ISO string to Date before formatting */}
+                        Finalizado em: {format(new Date(session.endTime), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                       </p>
                     )}
                   </div>

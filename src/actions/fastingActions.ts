@@ -14,10 +14,32 @@ export interface FastingSession {
   status: 'active' | 'completed';
 }
 
+// New interface for client-side data to ensure serializability
+export interface ClientFastingSession {
+  id?: string;
+  userId: string;
+  startTime: string; // ISO string
+  endTime?: string | null; // ISO string
+  goalDurationHours?: number;
+  actualDurationMinutes?: number;
+  notes?: string;
+  status: 'active' | 'completed';
+}
+
+// Helper function to convert FastingSession to ClientFastingSession
+function toClientFastingSession(session: FastingSession): ClientFastingSession {
+  return {
+    ...session,
+    startTime: session.startTime.toDate().toISOString(),
+    endTime: session.endTime ? session.endTime.toDate().toISOString() : null,
+  };
+}
+
+
 export async function startNewFast(userId: string, goalDurationHours?: number): Promise<string> {
   if (!userId) throw new Error("User ID is required.");
 
-  const newFast: Omit<FastingSession, 'id'> = {
+  const newFast: Omit<FastingSession, 'id' | 'startTime'> & { startTime: Timestamp } = {
     userId,
     startTime: Timestamp.now(),
     status: 'active',
@@ -51,7 +73,7 @@ export async function endCurrentFast(sessionId: string, notes?: string): Promise
   });
 }
 
-export async function getActiveFast(userId: string): Promise<FastingSession | null> {
+export async function getActiveFast(userId: string): Promise<ClientFastingSession | null> {
   if (!userId) return null;
 
   const q = query(
@@ -64,13 +86,14 @@ export async function getActiveFast(userId: string): Promise<FastingSession | nu
 
   const querySnapshot = await getDocs(q);
   if (!querySnapshot.empty) {
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as FastingSession;
+    const docData = querySnapshot.docs[0];
+    const session = { id: docData.id, ...docData.data() } as FastingSession;
+    return toClientFastingSession(session);
   }
   return null;
 }
 
-export async function getFastingHistory(userId: string, count: number = 7): Promise<FastingSession[]> {
+export async function getFastingHistory(userId: string, count: number = 7): Promise<ClientFastingSession[]> {
   if (!userId) return [];
   
   const q = query(
@@ -82,5 +105,9 @@ export async function getFastingHistory(userId: string, count: number = 7): Prom
   );
 
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FastingSession));
+  return querySnapshot.docs.map(docData => {
+    const session = { id: docData.id, ...docData.data() } as FastingSession;
+    return toClientFastingSession(session);
+  });
 }
+
