@@ -43,7 +43,8 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 export async function updateUserProfile(userId: string, data: Partial<UserProfile>): Promise<void> {
   if (!userId) throw new Error("User ID is required to update profile.");
   const userRef = doc(db, 'user_profiles', userId);
-  await updateDoc(userRef, data);
+  // Use setDoc with merge: true to create the document if it doesn't exist, or update/merge if it does.
+  await setDoc(userRef, data, { merge: true });
 }
 
 export interface FastingGoal {
