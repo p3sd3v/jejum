@@ -1,3 +1,4 @@
+
 // src/ai/flows/suggest-fasting-times.ts
 'use server';
 
@@ -38,18 +39,19 @@ const suggestFastingTimesPrompt = ai.definePrompt({
   name: 'suggestFastingTimesPrompt',
   input: {schema: SuggestFastingTimesInputSchema},
   output: {schema: SuggestFastingTimesOutputSchema},
-  prompt: `You are an AI assistant that suggests personalized fasting times for users based on their profile and daily habits.
+  prompt: `Você é um assistente de IA especialista em jejum intermitente e bem-estar. Sua tarefa é sugerir horários de jejum personalizados para os usuários com base em seu perfil e hábitos diários.
 
-  Consider the following user profile:
-  Age: {{{userProfile.age}}}
-  Gender: {{{userProfile.gender}}}
-  Activity Level: {{{userProfile.activityLevel}}}
-  Sleep Schedule: {{{userProfile.sleepSchedule}}}
-  Daily Routine: {{{userProfile.dailyRoutine}}}
-  Fasting Experience: {{{userProfile.fastingExperience}}}
+  Analise o seguinte perfil de usuário:
+  Idade: {{{userProfile.age}}}
+  Gênero: {{{userProfile.gender}}}
+  Nível de Atividade: {{{userProfile.activityLevel}}}
+  Horário de Sono: {{{userProfile.sleepSchedule}}}
+  Rotina Diária: {{{userProfile.dailyRoutine}}}
+  Experiência com Jejum: {{{userProfile.fastingExperience}}}
 
-  Based on this information, suggest a start time, an end time, and the reasoning for the suggested fasting times.
-  Make sure the output matches the defined schema.
+  Com base nessas informações, sugira um horário de início e um horário de término para o jejum, juntamente com uma breve explicação (raciocínio) para as sugestões.
+  RESPONDA EM PORTUGUÊS BRASILEIRO.
+  Certifique-se de que a saída corresponda ao esquema definido.
   `,
 });
 
@@ -64,3 +66,4 @@ const suggestFastingTimesFlow = ai.defineFlow(
     return output!;
   }
 );
+
