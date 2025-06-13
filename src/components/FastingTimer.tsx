@@ -22,7 +22,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
-
 const formatTime = (totalSeconds: number): string => {
   if (totalSeconds < 0) totalSeconds = 0;
   const hours = Math.floor(totalSeconds / 3600);
@@ -31,8 +30,11 @@ const formatTime = (totalSeconds: number): string => {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
 
+interface FastingTimerProps {
+  onFastEnded?: () => void; // Callback prop
+}
 
-const FastingTimer: React.FC = () => {
+const FastingTimer: React.FC<FastingTimerProps> = ({ onFastEnded }) => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const [activeFast, setActiveFast] = useState<ClientFastingSession | null>(null); // Use ClientFastingSession
@@ -106,7 +108,10 @@ const FastingTimer: React.FC = () => {
     try {
       await endCurrentFast(activeFast.id);
       toast({ title: "Jejum Finalizado!", description: "Parabéns por completar seu jejum!" });
-      await fetchProfileAndActiveFast(); // Refresh state
+      await fetchProfileAndActiveFast(); // Refresh timer state
+      if (onFastEnded) {
+        onFastEnded(); // Call the callback to refresh history
+      }
     } catch (error) {
       toast({ title: "Erro ao Finalizar Jejum", description: "Tente novamente.", variant: "destructive" });
     } finally {

@@ -1,9 +1,18 @@
 
+"use client"; // Add this directive for useState and event handlers
+
+import React, { useState } from 'react'; // Import useState
 import FastingTimer from '@/components/FastingTimer';
-import FastingHistory from '@/components/FastingHistory'; // Component for fasting history
+import FastingHistory from '@/components/FastingHistory';
 import { Separator } from '@/components/ui/separator';
 
 export default function DashboardPage() {
+  const [historyKey, setHistoryKey] = useState(0); // State to trigger history refresh
+
+  const handleFastEnded = () => {
+    setHistoryKey(prevKey => prevKey + 1); // Increment key to re-render FastingHistory
+  };
+
   return (
     <div className="space-y-8">
       <header className="text-center">
@@ -13,10 +22,10 @@ export default function DashboardPage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-1">
-          <FastingTimer />
+          <FastingTimer onFastEnded={handleFastEnded} /> {/* Pass callback */}
         </div>
         <div className="lg:col-span-2">
-         <FastingHistory />
+         <FastingHistory key={historyKey} /> {/* Pass key to force re-render */}
         </div>
       </div>
 
