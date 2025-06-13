@@ -40,11 +40,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
       if (mode === 'signup') {
         await createUserWithEmailAndPassword(auth, data.email, data.password);
         toast({ title: "Conta criada!", description: "Você foi registrado com sucesso." });
+        router.push('/dashboard'); // Redirect after successful signup
       } else {
         await signInWithEmailAndPassword(auth, data.email, data.password);
         toast({ title: "Login bem-sucedido!", description: "Bem-vindo de volta." });
+        router.push('/dashboard'); // Redirect after successful login
       }
-      router.push('/dashboard');
     } catch (error: any) {
       const errorMessage = error.code === 'auth/email-already-in-use' ? 'Este email já está em uso.' 
                          : error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' ? 'Email ou senha inválidos.'
