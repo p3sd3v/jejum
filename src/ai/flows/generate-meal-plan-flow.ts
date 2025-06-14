@@ -22,7 +22,8 @@ const DailyMealPlanSchema = z.object({
   meals: z.array(MealSchema).describe('Uma lista de refeições para o dia.'),
 });
 
-export const GenerateMealPlanInputSchema = z.object({
+// Schemas are defined but NOT exported as constants
+const GenerateMealPlanInputSchema = z.object({
   dietType: z.string().optional().describe('O tipo de dieta preferida pelo usuário (ex: equilibrada, low-carb, vegan, keto).'),
   foodIntolerances: z.string().optional().describe('Uma string com intolerâncias alimentares separadas por vírgula (ex: glúten, lactose).'),
   calorieGoal: z.number().optional().describe('A meta calórica diária aproximada do usuário em kcal.'),
@@ -30,16 +31,15 @@ export const GenerateMealPlanInputSchema = z.object({
 });
 export type GenerateMealPlanInput = z.infer<typeof GenerateMealPlanInputSchema>;
 
-export const GenerateMealPlanOutputSchema = z.object({
+const GenerateMealPlanOutputSchema = z.object({
   mealPlan: z.array(DailyMealPlanSchema).describe('O plano de refeições gerado para o número de dias especificado.'),
   disclaimer: z.string().optional().describe('Um aviso sobre as sugestões serem geradas por IA e a importância de consultar um profissional.'),
 });
 export type GenerateMealPlanOutput = z.infer<typeof GenerateMealPlanOutputSchema>;
 
-// Exporta os tipos que são usados em MealPlanDisplay
-export type Meal = z.infer<typeof MealSchema>;
-export type DailyMealPlan = z.infer<typeof DailyMealPlanSchema>;
-
+// Os tipos Meal e DailyMealPlan não são mais exportados diretamente daqui.
+// Eles são parte do GenerateMealPlanOutput e podem ser inferidos ou re-exportados
+// a partir do mealPlanActions.ts se necessário para uso direto no frontend.
 
 export async function generateMealPlan(input: GenerateMealPlanInput): Promise<GenerateMealPlanOutput> {
   return generateMealPlanFlow(input);
