@@ -8,13 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateUserProfile, getUserProfile, type UserProfile } from '@/actions/userProfileActions';
-import { Loader2, Bell } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const profileFormSchema = z.object({
   fastingGoalHours: z.coerce.number().min(12, "Mínimo 12 horas").max(72, "Máximo 72 horas").optional(),
@@ -24,14 +23,6 @@ const profileFormSchema = z.object({
   sleepSchedule: z.string().optional(),
   dailyRoutine: z.string().optional(),
   fastingExperience: z.string().optional(),
-  emailNotifications: z.object({
-    notifyOnFastStart: z.boolean().optional(),
-    notifyOnFastEnd: z.boolean().optional(),
-    preferredFastStartTime: z.string()
-      .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato HH:MM inválido (ex: 20:00)")
-      .optional()
-      .or(z.literal('')), // Allow empty string
-  }).optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -46,15 +37,8 @@ const ProfileForm: React.FC = () => {
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       fastingGoalHours: 16,
-      emailNotifications: {
-        notifyOnFastStart: false,
-        notifyOnFastEnd: false,
-        preferredFastStartTime: '',
-      }
     }
   });
-
-  const watchNotifyOnFastStart = form.watch('emailNotifications.notifyOnFastStart');
 
   useEffect(() => {
     if (currentUser) {
@@ -70,11 +54,6 @@ const ProfileForm: React.FC = () => {
               sleepSchedule: profile.aiProfile?.sleepSchedule,
               dailyRoutine: profile.aiProfile?.dailyRoutine,
               fastingExperience: profile.aiProfile?.fastingExperience,
-              emailNotifications: {
-                notifyOnFastStart: profile.emailNotifications?.notifyOnFastStart || false,
-                notifyOnFastEnd: profile.emailNotifications?.notifyOnFastEnd || false,
-                preferredFastStartTime: profile.emailNotifications?.preferredFastStartTime || '',
-              }
             });
           }
         })
@@ -101,11 +80,6 @@ const ProfileForm: React.FC = () => {
           dailyRoutine: data.dailyRoutine,
           fastingExperience: data.fastingExperience,
         },
-        emailNotifications: {
-          notifyOnFastStart: data.emailNotifications?.notifyOnFastStart,
-          notifyOnFastEnd: data.emailNotifications?.notifyOnFastEnd,
-          preferredFastStartTime: data.emailNotifications?.preferredFastStartTime,
-        }
       };
       
       await updateUserProfile(currentUser.uid, profileUpdateData);
@@ -125,7 +99,7 @@ const ProfileForm: React.FC = () => {
     <Card className="w-full shadow-lg">
       <CardHeader>
         <CardTitle className="text-2xl font-headline">Configurações do Perfil</CardTitle>
-        <CardDescription>Ajuste suas metas de jejum, informações para IA e preferências de notificação.</CardDescription>
+        <CardDescription>Ajuste suas metas de jejum e informações para IA.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -196,43 +170,7 @@ const ProfileForm: React.FC = () => {
               </div>
             </div>
           </div>
-          
-          <div className="border-t border-border pt-8">
-            <h3 className="text-lg font-medium font-headline mb-4 text-primary flex items-center">
-              <Bell className="mr-2 h-5 w-5"/>
-              Notificações por Email
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="notifyOnFastStart" 
-                  checked={form.watch('emailNotifications.notifyOnFastStart')}
-                  onCheckedChange={(checked) => form.setValue('emailNotifications.notifyOnFastStart', checked)}
-                />
-                <Label htmlFor="notifyOnFastStart">Lembrete para iniciar o jejum</Label>
-              </div>
-              {watchNotifyOnFastStart && (
-                <div className="space-y-2 pl-8">
-                  <Label htmlFor="preferredFastStartTime">Horário preferido para iniciar (HH:MM)</Label>
-                  <Input 
-                    id="preferredFastStartTime" 
-                    type="time" 
-                    {...form.register('emailNotifications.preferredFastStartTime')} 
-                  />
-                  {form.formState.errors.emailNotifications?.preferredFastStartTime && <p className="text-sm text-destructive">{form.formState.errors.emailNotifications.preferredFastStartTime.message}</p>}
-                </div>
-              )}
-              <div className="flex items-center space-x-2">
-                 <Switch 
-                  id="notifyOnFastEnd"
-                  checked={form.watch('emailNotifications.notifyOnFastEnd')}
-                  onCheckedChange={(checked) => form.setValue('emailNotifications.notifyOnFastEnd', checked)}
-                />
-                <Label htmlFor="notifyOnFastEnd">Aviso quando o jejum terminar</Label>
-              </div>
-            </div>
-          </div>
-          
+                    
           <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground w-full md:w-auto" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Salvar Alterações
@@ -244,4 +182,3 @@ const ProfileForm: React.FC = () => {
 };
 
 export default ProfileForm;
-
