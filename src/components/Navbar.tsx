@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, Info, Menu, BookOpenCheck, Palette } from 'lucide-react'; 
+import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, Info, Menu, BookOpenCheck, Palette, ShieldCheck } from 'lucide-react'; 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import React from 'react';
 
@@ -22,6 +22,7 @@ const Navbar = () => {
   const navLinks = [
     { href: "/planejamento", label: "Planejamento", icon: ListChecks },
     { href: "/progresso", label: "Progresso", icon: Award },
+    { href: "/desafios", label: "Desafios", icon: ShieldCheck }, // Novo link "Desafios"
     { href: "/dicas", label: "Dicas", icon: Info },
     { href: "/guia", label: "Guia", icon: BookOpenCheck },
     { href: "/profile", label: "Perfil", icon: UserCircle },
