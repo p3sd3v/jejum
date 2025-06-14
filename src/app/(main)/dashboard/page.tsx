@@ -97,9 +97,6 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
       
-      <div className="text-xs text-muted-foreground p-4 text-center border-t border-border mt-8">
-        <p>Lembretes e notificações (como iniciar jejum, registrar peso, terminar jejum) seriam gerenciados via Firebase Cloud Messaging (requer configuração de backend e Firebase Functions).</p>
-      </div>
     </div>
   );
 }
