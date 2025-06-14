@@ -39,6 +39,10 @@ export async function getAISuggestionHistory(userId: string): Promise<ClientAISu
     return [];
   }
 
+  // ATENÇÃO: Esta query requer um índice composto no Firestore.
+  // Coleção: ai_suggestion_requests
+  // Campos: userId (Ascendente), createdAt (Descendente)
+  // O erro no console do servidor (se o índice não existir) fornecerá um link para criá-lo.
   try {
     const q = query(
       collection(db, 'ai_suggestion_requests'),
