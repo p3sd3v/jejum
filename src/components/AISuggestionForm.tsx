@@ -271,7 +271,7 @@ const AISuggestionForm: React.FC = () => {
               <h3 className="text-xl font-headline text-primary">Sugestão Personalizada Recebida:</h3>
               <p><strong className="font-medium">Início do Jejum:</strong> {currentSuggestionRequest.suggestionOutput.suggestedStartTime}</p>
               <p><strong className="font-medium">Fim do Jejum:</strong> {currentSuggestionRequest.suggestionOutput.suggestedEndTime}</p>
-              <p className="text-sm"><strong className="font-medium">Raciocínio:</strong> {currentSuggestionRequest.suggestionOutput.reasoning}</p>
+              <p className="text-sm break-words"><strong className="font-medium">Raciocínio:</strong> {currentSuggestionRequest.suggestionOutput.reasoning}</p>
             </div>
           </CardFooter>
         )}
@@ -279,7 +279,7 @@ const AISuggestionForm: React.FC = () => {
            <CardFooter className="mt-6 border-t border-border pt-6">
             <div className="space-y-2 w-full text-destructive">
               <h3 className="text-xl font-headline flex items-center"><AlertTriangle className="mr-2 h-6 w-6"/>Erro na Sugestão Atual</h3>
-              <p>{currentSuggestionRequest.error || "Não foi possível gerar sua sugestão no momento. Tente novamente mais tarde."}</p>
+              <p className="break-words">{currentSuggestionRequest.error || "Não foi possível gerar sua sugestão no momento. Tente novamente mais tarde."}</p>
             </div>
           </CardFooter>
         )}
@@ -323,18 +323,18 @@ const AISuggestionForm: React.FC = () => {
                          'Erro'}
                       </Badge>
                     </div>
-                    <p className="text-xs text-foreground/80 mb-1 truncate">
-                      <span className="font-medium">Perfil Usado:</span> Idade {item.userInput.age}, {item.userInput.gender.substring(0,10)}, Ativ: {item.userInput.activityLevel.substring(0,10)}. Exp: {item.userInput.fastingExperience.substring(0,10)}.
+                    <p className="text-xs text-foreground/80 mb-1 break-words">
+                      <span className="font-medium">Perfil Usado:</span> Idade {item.userInput.age}, {item.userInput.gender}, Nível Ativ: {item.userInput.activityLevel}. Exp. Jejum: {item.userInput.fastingExperience}.
                     </p>
                     {item.status === 'completed' && item.suggestionOutput && (
                       <div className="mt-2 pt-2 border-t border-border/50">
                         <p className="text-sm"><strong className="font-medium text-primary">Sugestão:</strong> Início: {item.suggestionOutput.suggestedStartTime}, Fim: {item.suggestionOutput.suggestedEndTime}</p>
-                        <p className="text-xs text-muted-foreground mt-1"><strong className="font-medium">Raciocínio:</strong> {item.suggestionOutput.reasoning}</p>
+                        <p className="text-xs text-muted-foreground mt-1 break-words"><strong className="font-medium">Raciocínio:</strong> {item.suggestionOutput.reasoning}</p>
                       </div>
                     )}
                     {item.status === 'error' && (
                       <div className="mt-2 pt-2 border-t border-border/50">
-                        <p className="text-sm text-destructive">
+                        <p className="text-sm text-destructive break-words">
                           <strong className="font-medium">Erro:</strong> {item.error || "Detalhes do erro não disponíveis."}
                         </p>
                       </div>
@@ -359,3 +359,5 @@ const AISuggestionForm: React.FC = () => {
 
 export default AISuggestionForm;
 
+
+    
