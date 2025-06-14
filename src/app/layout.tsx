@@ -31,8 +31,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning={true}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Manual preconnect links removed; next/font handles Google Font optimization and self-hosting. */}
       </head>
       <body className="font-body antialiased">
         <Providers>
