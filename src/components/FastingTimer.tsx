@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -6,10 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { startNewFast, endCurrentFast, getActiveFast, type ClientFastingSession } from '@/actions/fastingActions'; // Use ClientFastingSession
+import { startNewFast, endCurrentFast, getActiveFast, type ClientFastingSession } from '@/actions/fastingActions';
 import { getUserProfile, type UserProfile } from '@/actions/userProfileActions';
 import { PlayCircle, StopCircle, Hourglass, Loader2, Target } from 'lucide-react';
-// Timestamp is not needed here anymore as we use ISO strings and convert to Date
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import {
@@ -20,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 const formatTime = (totalSeconds: number): string => {
   if (totalSeconds < 0) totalSeconds = 0;
@@ -31,13 +29,13 @@ const formatTime = (totalSeconds: number): string => {
 };
 
 interface FastingTimerProps {
-  onFastEnded?: () => void; // Callback prop
+  onFastEnded?: () => void;
 }
 
 const FastingTimer: React.FC<FastingTimerProps> = ({ onFastEnded }) => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
-  const [activeFast, setActiveFast] = useState<ClientFastingSession | null>(null); // Use ClientFastingSession
+  const [activeFast, setActiveFast] = useState<ClientFastingSession | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -56,7 +54,7 @@ const FastingTimer: React.FC<FastingTimerProps> = ({ onFastEnded }) => {
       setActiveFast(currentFast);
       if (currentFast) {
         const now = new Date();
-        const start = new Date(currentFast.startTime); // Convert ISO string to Date
+        const start = new Date(currentFast.startTime);
         setElapsedSeconds(Math.floor((now.getTime() - start.getTime()) / 1000));
       } else {
         setElapsedSeconds(0);
@@ -89,12 +87,12 @@ const FastingTimer: React.FC<FastingTimerProps> = ({ onFastEnded }) => {
   const handleStartFast = async () => {
     if (!currentUser) return;
     setIsLoading(true);
-    const goal = customGoalHours || userProfile?.fastingGoalHours || 16; // Default to 16 if nothing is set
+    const goal = customGoalHours || userProfile?.fastingGoalHours || 16;
     try {
       await startNewFast(currentUser.uid, goal);
-      toast({ title: "Jejum Iniciado!", description: `Meta: ${goal} horas. Bom jejum!` });
-      setShowStartDialog(false); // Close dialog
-      await fetchProfileAndActiveFast(); // Refresh state
+      toast({ title: "Jejum Iniciado!", description: `Meta: ${goal} horas. Bom jejum!`, variant: "default" });
+      setShowStartDialog(false); 
+      await fetchProfileAndActiveFast(); 
     } catch (error) {
       toast({ title: "Erro ao Iniciar Jejum", description: "Tente novamente.", variant: "destructive" });
     } finally {
@@ -107,10 +105,10 @@ const FastingTimer: React.FC<FastingTimerProps> = ({ onFastEnded }) => {
     setIsLoading(true);
     try {
       await endCurrentFast(activeFast.id);
-      toast({ title: "Jejum Finalizado!", description: "Parabéns por completar seu jejum!" });
-      await fetchProfileAndActiveFast(); // Refresh timer state
+      toast({ title: "Jejum Finalizado!", description: "Parabéns por completar seu jejum!", className: "bg-success text-success-foreground" });
+      await fetchProfileAndActiveFast(); 
       if (onFastEnded) {
-        onFastEnded(); // Call the callback to refresh history
+        onFastEnded(); 
       }
     } catch (error) {
       toast({ title: "Erro ao Finalizar Jejum", description: "Tente novamente.", variant: "destructive" });
@@ -123,10 +121,10 @@ const FastingTimer: React.FC<FastingTimerProps> = ({ onFastEnded }) => {
   const progressPercentage = goalSeconds > 0 ? Math.min((elapsedSeconds / goalSeconds) * 100, 100) : 0;
   const remainingSeconds = activeFast ? Math.max(0, goalSeconds - elapsedSeconds) : 0;
 
-  if (isLoading && !activeFast && !userProfile) { // Show loader only on initial load
+  if (isLoading && !activeFast && !userProfile) { 
     return (
-      <Card className="w-full max-w-md mx-auto shadow-xl">
-        <CardHeader><CardTitle className="text-center font-headline">Temporizador de Jejum</CardTitle></CardHeader>
+      <Card className="w-full max-w-md mx-auto shadow-lg bg-card">
+        <CardHeader><CardTitle className="text-center font-headline text-xl text-foreground">Temporizador de Jejum</CardTitle></CardHeader>
         <CardContent className="flex justify-center items-center h-40">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </CardContent>
@@ -135,25 +133,25 @@ const FastingTimer: React.FC<FastingTimerProps> = ({ onFastEnded }) => {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-xl text-center">
+    <Card className="w-full max-w-md mx-auto shadow-lg text-center bg-card">
       <CardHeader>
-        <CardTitle className="text-3xl font-headline text-primary flex items-center justify-center">
-          <Hourglass className="mr-2 h-8 w-8" />
+        <CardTitle className="text-2xl font-headline text-foreground flex items-center justify-center">
+          <Hourglass className="mr-2 h-7 w-7 text-primary" />
           {activeFast ? "Em Jejum" : "Pronto para Começar?"}
         </CardTitle>
         {activeFast && activeFast.goalDurationHours && (
-          <CardDescription className="flex items-center justify-center">
-            <Target className="mr-1 h-4 w-4 text-muted-foreground" /> Meta: {activeFast.goalDurationHours} horas
+          <CardDescription className="flex items-center justify-center text-muted-foreground">
+            <Target className="mr-1 h-4 w-4" /> Meta: {activeFast.goalDurationHours} horas
           </CardDescription>
         )}
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="text-5xl font-bold font-mono text-foreground" suppressHydrationWarning>
+      <CardContent className="space-y-4">
+        <div className="text-5xl font-bold font-mono text-primary" suppressHydrationWarning>
           {formatTime(elapsedSeconds)}
         </div>
         {activeFast && (
           <>
-            <Progress value={progressPercentage} className="w-full h-3 [&>div]:bg-accent" />
+            <Progress value={progressPercentage} className="w-full h-3 [&>div]:bg-primary" />
             <p className="text-sm text-muted-foreground" suppressHydrationWarning>
               {progressPercentage < 100 ? `Faltam: ${formatTime(remainingSeconds)} para sua meta.` : "Meta atingida! Você pode continuar se desejar."}
             </p>
@@ -177,16 +175,16 @@ const FastingTimer: React.FC<FastingTimerProps> = ({ onFastEnded }) => {
                 Iniciar Jejum
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] bg-card">
               <DialogHeader>
-                <DialogTitle className="font-headline">Iniciar Novo Jejum</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="font-headline text-foreground">Iniciar Novo Jejum</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
                   Defina uma meta para este jejum ou use sua meta padrão de {userProfile?.fastingGoalHours || 16} horas.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="goalHours" className="text-right col-span-1">
+                  <Label htmlFor="goalHours" className="text-right col-span-1 text-foreground">
                     Meta (horas)
                   </Label>
                   <Input

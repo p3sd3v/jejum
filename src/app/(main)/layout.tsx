@@ -1,10 +1,10 @@
-
 "use client";
 import React, { useEffect, type ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   const { currentUser, loading } = useAuth();
@@ -30,8 +30,18 @@ export default function MainLayout({ children }: { children: ReactNode }) {
       <main className="flex-grow container mx-auto p-4 sm:p-6 md:p-8">
         {children}
       </main>
-      <footer className="py-6 text-center text-sm text-muted-foreground border-t border-border">
-        © {new Date().getFullYear()} JejumZen. Todos os direitos reservados.
+      <footer className="bg-card py-6 text-center text-sm text-muted-foreground border-t border-border">
+        <div className="container mx-auto flex justify-around items-center">
+          <Link href="/suporte" className="flex flex-col items-center text-primary hover:text-primary/80">
+            <HelpCircle className="h-6 w-6 mb-1" />
+            Suporte
+          </Link>
+          <p>© {new Date().getFullYear()} Seca Jejum.</p>
+          <Link href="/profile" className="flex flex-col items-center text-primary hover:text-primary/80">
+            <Settings className="h-6 w-6 mb-1" />
+            Configurações
+          </Link>
+        </div>
       </footer>
     </div>
   );

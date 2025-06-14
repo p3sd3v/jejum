@@ -1,54 +1,99 @@
+"use client"; 
 
-"use client"; // Add this directive for useState and event handlers
-
-import React, { useState } from 'react'; // Import useState
+import React, { useState } from 'react';
 import FastingTimer from '@/components/FastingTimer';
-import FastingHistory from '@/components/FastingHistory';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress'; // Re-added for jejum progress bar
+import { Droplet, Zap } from 'lucide-react';
+import Image from 'next/image'; // For placeholder image
 
 export default function DashboardPage() {
-  const [historyKey, setHistoryKey] = useState(0); // State to trigger history refresh
+  const [historyKey, setHistoryKey] = useState(0); 
+  const [currentFastingProgress, setCurrentFastingProgress] = useState(0); // Example state for progress
 
   const handleFastEnded = () => {
-    setHistoryKey(prevKey => prevKey + 1); // Increment key to re-render FastingHistory
+    setHistoryKey(prevKey => prevKey + 1); 
+    setCurrentFastingProgress(0); // Reset progress when fast ends
+  };
+
+  // This would be updated by FastingTimer or other logic
+  const handleProgressUpdate = (progress: number) => {
+    setCurrentFastingProgress(progress);
+  };
+  
+  // Placeholder functions for new buttons
+  const handleBeberAgua = () => {
+    alert("Lembrete: Mantenha-se hidratado!");
+  };
+
+  const handleMotivacao = () => {
+    alert("Motivação do Dia: Você é capaz!");
   };
 
   return (
-    <div className="space-y-8">
-      <header className="text-center">
-        <h1 className="text-3xl md:text-4xl font-bold font-headline text-primary">Seu Painel JejumZen</h1>
-        <p className="text-muted-foreground mt-2">Acompanhe seu progresso e mantenha o foco!</p>
-      </header>
+    <div className="space-y-6">
+      {/* Status do Jejum */}
+      <Card className="bg-card shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-xl font-headline text-foreground">Seu Jejum Atual</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FastingTimer onFastEnded={handleFastEnded} />
+        </CardContent>
+      </Card>
+
+      {/* Indicadores de Progresso */}
+      <Card className="bg-card shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-xl font-headline text-foreground">Progresso do Jejum</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* ProgressBar for Jejum - value needs to be connected to FastingTimer state */}
+          <Progress value={currentFastingProgress} className="w-full h-3 [&>div]:bg-primary" />
+          <p className="text-sm text-center text-muted-foreground">{currentFastingProgress.toFixed(0)}% completo</p>
+        </CardContent>
+      </Card>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-1">
-          <FastingTimer onFastEnded={handleFastEnded} /> {/* Pass callback */}
-        </div>
-        <div className="lg:col-span-2">
-         <FastingHistory key={historyKey} /> {/* Pass key to force re-render */}
-        </div>
-      </div>
+      <Card className="bg-card shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-xl font-headline text-foreground">Progresso de Emagrecimento</CardTitle>
+          <CardDescription className="text-muted-foreground">Acompanhe sua jornada de perda de peso.</CardDescription>
+        </CardHeader>
+        <CardContent className="h-64 flex items-center justify-center">
+          {/* Placeholder for chart */}
+          <Image 
+            src="https://placehold.co/600x300.png" 
+            alt="Gráfico de Emagrecimento Placeholder" 
+            width={600} 
+            height={300} 
+            className="rounded-md"
+            data-ai-hint="chart graph"
+          />
+          {/* <canvas id="graficoProgresso"></canvas> */}
+        </CardContent>
+      </Card>
 
-      {/* Placeholder for future charts or additional stats */}
-      {/* <Separator className="my-12" />
-      <div className="space-y-6">
-        <h2 className="text-2xl font-headline text-center text-primary">Estatísticas Semanais (Em Breve)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader><CardTitle>Progresso Semanal</CardTitle></CardHeader>
-            <CardContent className="h-64 flex items-center justify-center text-muted-foreground">
-              Gráfico de progresso aqui
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader><CardTitle>Consistência</CardTitle></CardHeader>
-            <CardContent className="h-64 flex items-center justify-center text-muted-foreground">
-              Gráfico de consistência aqui
-            </CardContent>
-          </Card>
-        </div>
-      </div> */}
+      {/* Botões de Ação Rápida */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-background rounded-lg shadow">
+        <Button 
+          onClick={handleBeberAgua} 
+          className="bg-success hover:bg-success/90 text-success-foreground text-base py-6"
+        >
+          <Droplet className="mr-2 h-5 w-5" />
+          Beber Água
+        </Button>
+        <Button 
+          onClick={handleMotivacao} 
+          className="bg-accent hover:bg-accent/90 text-accent-foreground text-base py-6"
+        >
+          <Zap className="mr-2 h-5 w-5" />
+          Motivação do Dia
+        </Button>
+      </section>
 
+      {/* FastingHistory can be added back here or on a dedicated "Progresso" page if desired */}
+      {/* <FastingHistory key={historyKey} /> */}
     </div>
   );
 }

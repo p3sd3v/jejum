@@ -18,8 +18,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'JejumZen - Gerenciador de Jejum Intermitente',
-  description: 'Monitore seus jejuns, defina metas e receba sugestões inteligentes com JejumZen.',
+  title: 'Seca Jejum - Seu Guia de Jejum Inteligente',
+  description: 'Monitore seus jejuns, defina metas e alcance seus objetivos com Seca Jejum.',
 };
 
 export default function RootLayout({
@@ -30,11 +30,8 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} ${poppins.variable}`}>
       <head>
-        {/* Standard Google Font links for Inter and Poppins are handled by next/font */}
-        {/* Existing link elements from user code: */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* next/font handles the specific font loading, so no need for additional <link> tags for Inter and Poppins here. */}
       </head>
       <body className="font-body antialiased">
         <Providers>
