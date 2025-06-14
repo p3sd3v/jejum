@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, BookOpenCheck, Palette, ShieldCheck } from 'lucide-react'; 
+import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, BookOpenCheck, Palette, ShieldCheck, Lightbulb } from 'lucide-react'; 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import React from 'react';
 
@@ -23,6 +23,7 @@ const Navbar = () => {
     { href: "/planejamento", label: "Planejamento", icon: ListChecks },
     { href: "/progresso", label: "Progresso", icon: Award },
     { href: "/desafios", label: "Desafios", icon: ShieldCheck },
+    { href: "/dicas", label: "Dicas", icon: Lightbulb },
     { href: "/guia", label: "Guia", icon: BookOpenCheck },
     { href: "/profile", label: "Perfil", icon: UserCircle },
     { href: "/configuracoes", label: "Configurações", icon: Settings }, 
