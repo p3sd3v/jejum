@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { updateUserFastingGoal, updateUserAIProfile, getUserProfile, type UserProfile } from '@/actions/userProfileActions';
-import { Loader2 } from 'lucide-react';
+import { updateUserProfile, getUserProfile, type UserProfile } from '@/actions/userProfileActions';
+import { Loader2, Bell } from 'lucide-react';
 
 const profileFormSchema = z.object({
   fastingGoalHours: z.coerce.number().min(12, "Mínimo 12 horas").max(72, "Máximo 72 horas").optional(),
@@ -23,6 +24,14 @@ const profileFormSchema = z.object({
   sleepSchedule: z.string().optional(),
   dailyRoutine: z.string().optional(),
   fastingExperience: z.string().optional(),
+  emailNotifications: z.object({
+    notifyOnFastStart: z.boolean().optional(),
+    notifyOnFastEnd: z.boolean().optional(),
+    preferredFastStartTime: z.string()
+      .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato HH:MM inválido (ex: 20:00)")
+      .optional()
+      .or(z.literal('')), // Allow empty string
+  }).optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -36,9 +45,16 @@ const ProfileForm: React.FC = () => {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      fastingGoalHours: 16, // Default goal
+      fastingGoalHours: 16,
+      emailNotifications: {
+        notifyOnFastStart: false,
+        notifyOnFastEnd: false,
+        preferredFastStartTime: '',
+      }
     }
   });
+
+  const watchNotifyOnFastStart = form.watch('emailNotifications.notifyOnFastStart');
 
   useEffect(() => {
     if (currentUser) {
@@ -54,6 +70,11 @@ const ProfileForm: React.FC = () => {
               sleepSchedule: profile.aiProfile?.sleepSchedule,
               dailyRoutine: profile.aiProfile?.dailyRoutine,
               fastingExperience: profile.aiProfile?.fastingExperience,
+              emailNotifications: {
+                notifyOnFastStart: profile.emailNotifications?.notifyOnFastStart || false,
+                notifyOnFastEnd: profile.emailNotifications?.notifyOnFastEnd || false,
+                preferredFastStartTime: profile.emailNotifications?.preferredFastStartTime || '',
+              }
             });
           }
         })
@@ -69,25 +90,28 @@ const ProfileForm: React.FC = () => {
     if (!currentUser) return;
     setIsLoading(true);
     try {
-      if (data.fastingGoalHours !== undefined) {
-        await updateUserFastingGoal(currentUser.uid, { fastingGoalHours: data.fastingGoalHours });
-      }
-      
-      const aiProfileData = {
-        age: data.age,
-        gender: data.gender,
-        activityLevel: data.activityLevel,
-        sleepSchedule: data.sleepSchedule,
-        dailyRoutine: data.dailyRoutine,
-        fastingExperience: data.fastingExperience,
+      // Construct the profile data to update, ensuring nested objects are handled correctly
+      const profileUpdateData: Partial<UserProfile> = {
+        fastingGoalHours: data.fastingGoalHours,
+        aiProfile: {
+          age: data.age,
+          gender: data.gender,
+          activityLevel: data.activityLevel,
+          sleepSchedule: data.sleepSchedule,
+          dailyRoutine: data.dailyRoutine,
+          fastingExperience: data.fastingExperience,
+        },
+        emailNotifications: {
+          notifyOnFastStart: data.emailNotifications?.notifyOnFastStart,
+          notifyOnFastEnd: data.emailNotifications?.notifyOnFastEnd,
+          preferredFastStartTime: data.emailNotifications?.preferredFastStartTime,
+        }
       };
-      // Only update if at least one AI profile field is present
-      if (Object.values(aiProfileData).some(val => val !== undefined && val !== '')) {
-         await updateUserAIProfile(currentUser.uid, aiProfileData as UserProfile['aiProfile']);
-      }
-      toast({ title: "Sucesso!", description: "Seu perfil foi atualizado." });
-    } catch (error) {
-      toast({ title: "Erro", description: "Não foi possível atualizar o perfil.", variant: "destructive" });
+      
+      await updateUserProfile(currentUser.uid, profileUpdateData);
+      toast({ title: "Sucesso!", description: "Seu perfil foi atualizado.", className: "bg-success text-success-foreground" });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Não foi possível atualizar o perfil.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +125,7 @@ const ProfileForm: React.FC = () => {
     <Card className="w-full shadow-lg">
       <CardHeader>
         <CardTitle className="text-2xl font-headline">Configurações do Perfil</CardTitle>
-        <CardDescription>Ajuste suas metas de jejum e informações para sugestões de IA.</CardDescription>
+        <CardDescription>Ajuste suas metas de jejum, informações para IA e preferências de notificação.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -173,6 +197,45 @@ const ProfileForm: React.FC = () => {
             </div>
           </div>
           
+          <div className="border-t border-border pt-8">
+            <h3 className="text-lg font-medium font-headline mb-4 text-primary flex items-center">
+              <Bell className="mr-2 h-5 w-5"/>
+              Notificações por Email
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="notifyOnFastStart" 
+                  checked={form.watch('emailNotifications.notifyOnFastStart')}
+                  onCheckedChange={(checked) => form.setValue('emailNotifications.notifyOnFastStart', checked)}
+                />
+                <Label htmlFor="notifyOnFastStart">Lembrete para iniciar o jejum</Label>
+              </div>
+              {watchNotifyOnFastStart && (
+                <div className="space-y-2 pl-8">
+                  <Label htmlFor="preferredFastStartTime">Horário preferido para iniciar (HH:MM)</Label>
+                  <Input 
+                    id="preferredFastStartTime" 
+                    type="time" 
+                    {...form.register('emailNotifications.preferredFastStartTime')} 
+                  />
+                  {form.formState.errors.emailNotifications?.preferredFastStartTime && <p className="text-sm text-destructive">{form.formState.errors.emailNotifications.preferredFastStartTime.message}</p>}
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                 <Switch 
+                  id="notifyOnFastEnd"
+                  checked={form.watch('emailNotifications.notifyOnFastEnd')}
+                  onCheckedChange={(checked) => form.setValue('emailNotifications.notifyOnFastEnd', checked)}
+                />
+                <Label htmlFor="notifyOnFastEnd">Aviso quando o jejum terminar</Label>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Obs: O envio real dos emails requer configuração de backend (Firebase Functions e serviço de email) que não está incluída.
+            </p>
+          </div>
+          
           <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground w-full md:w-auto" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Salvar Alterações
@@ -184,3 +247,4 @@ const ProfileForm: React.FC = () => {
 };
 
 export default ProfileForm;
+

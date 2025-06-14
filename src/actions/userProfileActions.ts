@@ -22,6 +22,11 @@ export interface UserProfile {
     foodIntolerances?: string; // comma-separated string
     calorieGoal?: number;
   };
+  emailNotifications?: {
+    notifyOnFastStart?: boolean;
+    notifyOnFastEnd?: boolean;
+    preferredFastStartTime?: string; // e.g., "20:00"
+  };
 }
 
 export async function createUserProfile(user: User, additionalData: Partial<UserProfile> = {}): Promise<void> {
@@ -48,7 +53,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 export async function updateUserProfile(userId: string, data: Partial<UserProfile>): Promise<void> {
   if (!userId) throw new Error("User ID is required to update profile.");
   const userRef = doc(db, 'user_profiles', userId);
-  await setDoc(userRef, data, { merge: true });
+  await setDoc(userRef, data, { merge: true }); // { merge: true } is crucial for partial updates
 }
 
 export interface FastingGoal {
@@ -70,6 +75,12 @@ export async function updateUserMealPreferences(userId: string, preferences: Use
   await updateUserProfile(userId, { mealPreferences: preferences });
 }
 
+export async function updateUserEmailNotifications(userId: string, notifications: UserProfile['emailNotifications']): Promise<void> {
+  if (!userId) throw new Error("User ID is required.");
+  await updateUserProfile(userId, { emailNotifications: notifications });
+}
+
+
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     const profile = await getUserProfile(user.uid);
@@ -78,3 +89,4 @@ auth.onAuthStateChanged(async (user) => {
     }
   }
 });
+
