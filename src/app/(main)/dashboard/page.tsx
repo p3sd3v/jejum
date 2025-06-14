@@ -91,9 +91,9 @@ export default function DashboardPage() {
           <CardTitle className="text-xl font-headline text-foreground">Progresso de Emagrecimento</CardTitle>
           <CardDescription className="text-muted-foreground">Acompanhe sua jornada de perda de peso.</CardDescription>
         </CardHeader>
-        <CardContent className="min-h-[320px] flex flex-col items-center justify-center">
+        <CardContent className="h-[280px] p-0 pt-2 sm:h-[320px] sm:p-2 sm:pt-2">
           {currentUser && <WeightProgressChart key={weightChartKey} />}
-          {!currentUser && <p className="text-muted-foreground">Carregando dados do usuário...</p>}
+          {!currentUser && <p className="text-muted-foreground p-4">Carregando dados do usuário...</p>}
         </CardContent>
       </Card>
       

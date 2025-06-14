@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { getWeightHistory, type ClientWeightEntry } from '@/actions/weightActions';
 import { useAuth } from '@/contexts/AuthContext';
-import { format, startOfWeek, startOfMonth, endOfWeek, endOfMonth, eachWeekOfInterval, eachMonthOfInterval, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfWeek, startOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Loader2 } from 'lucide-react';
 
@@ -21,14 +21,14 @@ type TimeView = 'day' | 'week' | 'month';
 const chartConfig = {
   weight: {
     label: "Peso",
-    color: "hsl(var(--primary))", // Using primary color for the bar
+    color: "hsl(var(--primary))", 
   },
 } satisfies ChartConfig;
 
 interface FormattedData {
-  date: string; // Formatted date for XAxis
+  date: string; 
   weight: number;
-  originalDate: Date; // For sorting and tooltips
+  originalDate: Date; 
 }
 
 const WeightProgressChart: React.FC = () => {
@@ -40,7 +40,7 @@ const WeightProgressChart: React.FC = () => {
   useEffect(() => {
     if (currentUser?.uid) {
       setIsLoading(true);
-      getWeightHistory(currentUser.uid, 180) // Fetch more data for better aggregation
+      getWeightHistory(currentUser.uid, 180) 
         .then(data => {
           setRawData(data);
         })
@@ -49,7 +49,7 @@ const WeightProgressChart: React.FC = () => {
         })
         .finally(() => setIsLoading(false));
     } else {
-      setIsLoading(false); // Not logged in, or user not yet available
+      setIsLoading(false); 
     }
   }, [currentUser]);
 
@@ -60,7 +60,7 @@ const WeightProgressChart: React.FC = () => {
 
     if (timeView === 'day') {
       return entriesWithDates
-        .slice(-15) // Show last 15 entries for 'day' view
+        .slice(-15) 
         .map(entry => ({
           date: format(entry.dateObj, 'dd/MM', { locale: ptBR }),
           weight: entry.weight,
@@ -94,65 +94,67 @@ const WeightProgressChart: React.FC = () => {
     };
 
     if (timeView === 'week') {
-      return aggregate(date => startOfWeek(date, { locale: ptBR }), "dd/MM", 12); // Last 12 weeks
+      return aggregate(date => startOfWeek(date, { locale: ptBR }), "dd/MM", 12); 
     } else { // month
-      return aggregate(startOfMonth, "MMM/yy", 12); // Last 12 months
+      return aggregate(startOfMonth, "MMM/yy", 12); 
     }
   }, [rawData, timeView]);
 
   if (isLoading) {
     return (
-      <div className="h-64 flex items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2 text-muted-foreground">Carregando gráfico de peso...</p>
+        <p className="ml-2 text-muted-foreground">Carregando gráfico...</p>
       </div>
     );
   }
   
   if (!currentUser) {
      return (
-        <div className="h-60 flex flex-col items-center justify-center text-muted-foreground">
-          <p>Faça login para ver seu progresso de peso.</p>
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+          <p>Faça login para ver seu progresso.</p>
         </div>
       );
   }
 
 
   return (
-    <div className="space-y-3">
-      <div className="flex justify-center space-x-2 pt-2">
+    <div className="space-y-2 h-full flex flex-col">
+      <div className="flex justify-center space-x-1 sm:space-x-2 pt-1">
         {(['day', 'week', 'month'] as TimeView[]).map(view => (
           <Button
             key={view}
             variant={timeView === view ? 'default' : 'outline'}
             size="sm"
             onClick={() => setTimeView(view)}
-            className={timeView === view ? 'bg-primary text-primary-foreground' : 'border-primary text-primary hover:bg-primary/10'}
+            className={`text-xs px-2 sm:px-3 ${timeView === view ? 'bg-primary text-primary-foreground' : 'border-primary text-primary hover:bg-primary/10'}`}
           >
             {view === 'day' ? 'Dia' : view === 'week' ? 'Semana' : 'Mês'}
           </Button>
         ))}
       </div>
       {aggregatedChartData.length > 0 ? (
-        <ChartContainer config={chartConfig} className="min-h-[250px] w-full h-64">
+        <ChartContainer config={chartConfig} className="h-full w-full flex-1">
           <BarChart 
             accessibilityLayer 
             data={aggregatedChartData} 
-            margin={{ top: 5, right: 10, left: -25, bottom: 5 }}
+            margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
               dataKey="date"
               tickLine={false}
               axisLine={false}
-              tickMargin={8}
-              fontSize={12}
+              tickMargin={4}
+              fontSize={10}
+              interval={"preserveStartEnd"}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tickMargin={8}
-              fontSize={12}
+              tickMargin={4}
+              fontSize={10}
+              width={25}
               domain={['dataMin - 2', 'dataMax + 2']}
               tickFormatter={(value) => `${value.toFixed(0)}`} 
             />
@@ -165,24 +167,25 @@ const WeightProgressChart: React.FC = () => {
                     const originalDate = payload[0].payload.originalDate;
                     let formattedLabel = format(originalDate, 'dd/MM/yyyy', { locale: ptBR });
                     if (timeView === 'week') {
-                       formattedLabel = `Semana de ${format(startOfWeek(originalDate, { locale: ptBR }), 'dd/MM', { locale: ptBR })}`;
+                       formattedLabel = `Sem. ${format(startOfWeek(originalDate, { locale: ptBR }), 'dd/MM', { locale: ptBR })}`;
                     } else if (timeView === 'month') {
-                       formattedLabel = format(originalDate, 'MMMM yyyy', { locale: ptBR });
+                       formattedLabel = format(originalDate, 'MMM yyyy', { locale: ptBR });
+                    } else if (timeView === 'day') {
+                        formattedLabel = format(originalDate, 'dd/MM/yy', { locale: ptBR });
                     }
-                    return <div className="text-sm">{formattedLabel}</div>;
+                    return <div className="text-xs">{formattedLabel}</div>;
                   }
                   return label;
                 }}
               />}
             />
-            <Bar dataKey="weight" fill="var(--color-weight)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="weight" fill="var(--color-weight)" radius={[3, 3, 0, 0]} barSize={20} />
           </BarChart>
         </ChartContainer>
       ) : (
-        <div className="h-56 flex flex-col items-center justify-center text-muted-foreground">
-          <p>Nenhum dado de peso registrado ainda.</p>
-          <p className="text-sm">Adicione seu peso para ver o progresso.</p>
-           {/* You might want to add a button/link here to navigate to a weight entry page/modal */}
+        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
+          <p className="text-sm">Nenhum dado de peso registrado.</p>
+          <p className="text-xs mt-1">Adicione seu peso para ver o progresso.</p>
         </div>
       )}
     </div>
@@ -190,3 +193,4 @@ const WeightProgressChart: React.FC = () => {
 };
 
 export default WeightProgressChart;
+
