@@ -13,9 +13,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Lightbulb, AlertTriangle, History, CalendarDays } from 'lucide-react';
 import { createAISuggestionRequest, getAISuggestionHistory } from '@/actions/aiSuggestionActions';
-import type { SuggestFastingTimesInput, SuggestFastingTimesOutput } from '@/ai/flows/suggest-fasting-times';
+import type { SuggestFastingTimesInput } from '@/ai/flows/suggest-fasting-times';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserProfile, updateUserAIProfile, type UserProfile } from '@/actions/userProfileActions';
+import { getUserProfile, updateUserAIProfile } from '@/actions/userProfileActions';
 import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { AISuggestionRequest, ClientAISuggestionRequest } from '@/actions/aiSuggestionTypes';
@@ -53,7 +53,7 @@ const AISuggestionForm: React.FC = () => {
     if (!currentUser) return;
     setIsLoadingHistory(true);
     try {
-      const history = await getAISuggestionHistory(currentUser.uid, 5);
+      const history = await getAISuggestionHistory(currentUser.uid); // Removido o limite
       setSuggestionHistory(history);
     } catch (error) {
       console.error("Failed to fetch suggestion history", error);
@@ -101,11 +101,11 @@ const AISuggestionForm: React.FC = () => {
 
           if (clientData.status === 'completed') {
             toast({ title: "Sugestão Gerada!", description: "Confira a sugestão personalizada para você." });
-            fetchHistory(); // Refresh history
+            fetchHistory(); 
             if (unsubscribe) unsubscribe();
           } else if (clientData.status === 'error') {
             toast({ title: "Erro ao Processar Sugestão", description: clientData.error || "Ocorreu um erro no servidor.", variant: "destructive" });
-            fetchHistory(); // Refresh history
+            fetchHistory(); 
             if (unsubscribe) unsubscribe();
           }
         } else {
@@ -117,7 +117,7 @@ const AISuggestionForm: React.FC = () => {
         console.error("Error listening to suggestion request:", error);
         toast({ title: "Erro de Conexão", description: "Não foi possível ouvir as atualizações da sugestão.", variant: "destructive" });
         setCurrentSuggestionRequest(prev => prev ? {...prev, status: 'error', error: 'Erro de conexão'} : null);
-        fetchHistory(); // Refresh history
+        fetchHistory(); 
         if (unsubscribe) unsubscribe();
       });
     }
@@ -151,7 +151,7 @@ const AISuggestionForm: React.FC = () => {
       });
       toast({ title: "Solicitação Enviada!", description: "Sua sugestão está sendo processada. Aguarde..." });
       await updateUserAIProfile(currentUser.uid, data);
-      fetchHistory(); // Refresh history after new submission
+      fetchHistory(); 
     } catch (error: any) {
       toast({ title: "Erro ao Solicitar Sugestão", description: error.message, variant: "destructive" });
       setCurrentSuggestionRequest(null);
@@ -169,12 +169,12 @@ const AISuggestionForm: React.FC = () => {
   const getStatusBadgeVariant = (status: ClientAISuggestionRequest['status']): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case 'completed':
-        return 'default'; // Greenish, as per theme's primary or a success variant
+        return 'default'; 
       case 'error':
         return 'destructive';
       case 'pending':
       case 'processing':
-        return 'secondary'; // Neutral/grayish
+        return 'secondary'; 
       default:
         return 'outline';
     }
@@ -292,7 +292,7 @@ const AISuggestionForm: React.FC = () => {
             Histórico de Sugestões
           </CardTitle>
           <CardDescription>
-            Suas últimas {suggestionHistory.length} sugestões solicitadas.
+            Seu histórico de {suggestionHistory.length > 0 ? `${suggestionHistory.length} ` : ''}sugestões solicitadas.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -324,9 +324,11 @@ const AISuggestionForm: React.FC = () => {
                         <p className="text-xs text-muted-foreground mt-1"><strong className="font-medium">Raciocínio:</strong> {item.suggestionOutput.reasoning.substring(0,150)}{item.suggestionOutput.reasoning.length > 150 ? '...' : ''}</p>
                       </div>
                     )}
-                    {item.status === 'error' && item.error && (
+                    {item.status === 'error' && (
                       <div className="mt-2 pt-2 border-t border-border/50">
-                        <p className="text-sm text-destructive"><strong className="font-medium">Erro:</strong> {item.error}</p>
+                        <p className="text-sm text-destructive">
+                          <strong className="font-medium">Erro:</strong> {item.error || "Detalhes do erro não disponíveis."}
+                        </p>
                       </div>
                     )}
                      {(item.status === 'pending' || item.status === 'processing') && (
@@ -348,3 +350,4 @@ const AISuggestionForm: React.FC = () => {
 };
 
 export default AISuggestionForm;
+
