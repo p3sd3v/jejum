@@ -53,7 +53,7 @@ const AISuggestionForm: React.FC = () => {
     if (!currentUser) return;
     setIsLoadingHistory(true);
     try {
-      const history = await getAISuggestionHistory(currentUser.uid); // Removido o limite
+      const history = await getAISuggestionHistory(currentUser.uid);
       setSuggestionHistory(history);
     } catch (error) {
       console.error("Failed to fetch suggestion history", error);
@@ -350,4 +350,3 @@ const AISuggestionForm: React.FC = () => {
 };
 
 export default AISuggestionForm;
-
