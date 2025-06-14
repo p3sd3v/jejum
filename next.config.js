@@ -1,33 +1,5 @@
-
-import type {NextConfig} from 'next';
-
-const nextConfig: NextConfig = {
-  /* config options here */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-    ],
-  },
-  async redirects() {
-    return [
-      {
-        source: '/dicas',
-        destination: '/dashboard',
-        permanent: true,
-      },
-    ]
-  },
-};
-
-export default nextConfig;
+// This file is intentionally left blank or can be removed.
+// The configuration has been moved to next.config.ts
+// To ensure no conflicts, this file should not contain active configuration.
+// For safety, we'll make it an empty module export.
+module.exports = {};
