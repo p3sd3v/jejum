@@ -4,48 +4,52 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Utensils, Salad, Soup, Coffee } from 'lucide-react'; // Example icons
+import { Utensils, Salad, Soup, Coffee, ChefHat } from 'lucide-react'; // Example icons
+// Ensure DailyMealPlan type is imported or defined if not implicitly available
+// For this case, it will be imported from mealPlanActions or generate-meal-plan-flow
+// For now, let's assume it's available from props or a shared type definition.
+// If generate-meal-plan-flow.ts exports DailyMealPlan, it can be used here.
+import type { DailyMealPlan } from '@/ai/flows/generate-meal-plan-flow';
 
-export interface Meal {
-  name: string; // "Café da manhã", "Almoço", "Jantar", "Lanche"
-  description: string;
-}
-
-export interface DailyMealPlan {
-  day: string; // "Dia 1", "Segunda-feira"
-  meals: Meal[];
-}
 
 interface MealPlanDisplayProps {
-  mealPlan: DailyMealPlan[] | null;
+  mealPlan: DailyMealPlan[] | null; // Make sure this type matches the AI output structure
 }
 
 const getMealIcon = (mealName: string) => {
   const lowerMealName = mealName.toLowerCase();
-  if (lowerMealName.includes('café') || lowerMealName.includes('breakfast')) {
+  if (lowerMealName.includes('café') || lowerMealName.includes('pequeno-almoço') || lowerMealName.includes('breakfast')) {
     return <Coffee className="h-5 w-5 mr-2 text-primary" />;
   }
   if (lowerMealName.includes('almoço') || lowerMealName.includes('lunch')) {
     return <Salad className="h-5 w-5 mr-2 text-primary" />;
   }
-  if (lowerMealName.includes('jantar') || lowerMealName.includes('dinner') || lowerMealName.includes('sopa') ) {
+  if (lowerMealName.includes('jantar') || lowerMealName.includes('dinner') || lowerMealName.includes('ceia')) {
     return <Soup className="h-5 w-5 mr-2 text-primary" />;
+  }
+   if (lowerMealName.includes('lanche') || lowerMealName.includes('snack')) {
+    return <ChefHat className="h-5 w-5 mr-2 text-primary" />;
   }
   return <Utensils className="h-5 w-5 mr-2 text-primary" />;
 };
 
 const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ mealPlan }) => {
   if (!mealPlan || mealPlan.length === 0) {
+    // This case should ideally be handled by the parent component
+    // (e.g., showing a message like "Nenhum cardápio gerado ainda" or "IA não retornou resultados")
+    // However, if it's called with null/empty, we can provide a fallback.
     return (
       <Card className="mt-8 shadow-lg">
         <CardHeader>
           <CardTitle className="text-xl font-headline flex items-center text-primary">
             <Utensils className="mr-2 h-6 w-6" />
-            Seu Cardápio Semanal
+            Seu Cardápio
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Nenhum cardápio gerado ainda. Defina suas preferências e clique em "Gerar Cardápio".</p>
+          <p className="text-muted-foreground">
+            Nenhum cardápio para exibir. Tente gerar um novo cardápio usando suas preferências.
+          </p>
         </CardContent>
       </Card>
     );
@@ -56,10 +60,10 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ mealPlan }) => {
       <CardHeader>
         <CardTitle className="text-2xl font-headline flex items-center text-primary">
           <Utensils className="mr-3 h-7 w-7" />
-          Seu Cardápio Semanal Sugerido
+          Seu Cardápio Sugerido pela IA
         </CardTitle>
         <CardDescription className="text-muted-foreground">
-          Este é um exemplo de cardápio. A geração com IA completa será implementada em breve.
+          Este cardápio foi gerado com base nas suas preferências.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -76,9 +80,12 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ mealPlan }) => {
                       {getMealIcon(meal.name)}
                       {meal.name}
                     </h4>
-                    <p className="text-sm text-foreground/90">{meal.description}</p>
+                    <p className="text-sm text-foreground/90 whitespace-pre-line">{meal.description}</p>
                   </div>
                 ))}
+                {dailyPlan.meals.length === 0 && (
+                  <p className="text-sm text-muted-foreground p-4">Nenhuma refeição sugerida para este dia.</p>
+                )}
               </AccordionContent>
             </AccordionItem>
           ))}
@@ -90,30 +97,15 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ mealPlan }) => {
 
 export default MealPlanDisplay;
 
-// Exemplo de dados estáticos para demonstração inicial
+// O exampleStaticMealPlan pode ser removido ou mantido para testes, mas não será mais usado pela lógica principal.
 export const exampleStaticMealPlan: DailyMealPlan[] = [
   {
-    day: "Dia 1 (Exemplo)",
+    day: "Dia 1 (Exemplo Estático)",
     meals: [
       { name: "Café da manhã", description: "Omelete com espinafre e queijo (2 ovos, 1 xícara de espinafre, 30g de queijo), café preto ou chá sem açúcar." },
       { name: "Almoço", description: "120g de frango grelhado, 1 xícara de legumes assados (brócolis, cenoura, abobrinha) temperados com azeite e ervas." },
       { name: "Jantar", description: "Sopa de abóbora com gengibre (2 xícaras), acompanhada de uma pequena salada de folhas verdes com tomate cereja e pepino." },
     ],
   },
-  {
-    day: "Dia 2 (Exemplo)",
-    meals: [
-      { name: "Café da manhã", description: "Smoothie feito com 1/2 abacate, 1/2 xícara de morangos, 1 colher de sopa de chia e 200ml de leite de amêndoas sem açúcar." },
-      { name: "Almoço", description: "120g de salmão assado com gotas de limão, 1/2 xícara de quinoa cozida e 1 xícara de aspargos no vapor." },
-      { name: "Jantar", description: "Salada completa: 1 lata de atum em água, 2 ovos cozidos, mix de folhas verdes, tomate, pepino, azeitonas. Temperar com azeite e vinagre balsâmico." },
-    ],
-  },
-  {
-    day: "Dia 3 (Exemplo)",
-    meals: [
-      { name: "Café da manhã", description: "1 pote (170g) de iogurte grego natural integral, 2 colheres de sopa de granola caseira sem açúcar e 1/2 xícara de frutas vermelhas." },
-      { name: "Almoço", description: "1 xícara de lentilhas cozidas e temperadas, 1/2 xícara de arroz integral e uma salada colorida (alface, rúcula, cenoura ralada, beterraba ralada)." },
-      { name: "Jantar", description: "1 abobrinha média recheada com 100g de carne moída magra refogada com tomate e temperos, coberta com 20g de queijo mussarela light e assada." },
-    ],
-  },
+  // ... outros dias de exemplo podem ser mantidos ou removidos
 ];

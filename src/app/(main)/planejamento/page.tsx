@@ -5,54 +5,102 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Utensils, Sparkles, Loader2 } from "lucide-react";
+import { Utensils, Sparkles, Loader2, AlertTriangle } from "lucide-react";
 import MealPlannerForm from '@/components/MealPlannerForm';
-import MealPlanDisplay, { type DailyMealPlan, exampleStaticMealPlan } from '@/components/MealPlanDisplay';
+import MealPlanDisplay from '@/components/MealPlanDisplay'; // DailyMealPlan type will be resolved from here
 import { useAuth } from '@/contexts/AuthContext';
-// Em uma futura implementação, chamaríamos uma server action aqui
-// import { generateMealPlanAction } from '@/actions/mealPlanActions'; 
+import { getUserProfile, type UserProfile } from '@/actions/userProfileActions';
+import { generateMealPlanAction, type DailyMealPlan } from '@/actions/mealPlanActions'; // Import the action and type
+import { useToast } from '@/hooks/use-toast';
+
 
 export default function PlanejamentoPage() {
   const { currentUser } = useAuth();
+  const { toast } = useToast();
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
   const [generatedMealPlan, setGeneratedMealPlan] = useState<DailyMealPlan[] | null>(null);
-  const [showForm, setShowForm] = useState(true); // Controla a visibilidade do formulário
+  const [mealPlanDisclaimer, setMealPlanDisclaimer] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isFetchingProfile, setIsFetchingProfile] = useState(true);
+
+  useEffect(() => {
+    if (currentUser) {
+      setIsFetchingProfile(true);
+      getUserProfile(currentUser.uid)
+        .then(profile => {
+          setUserProfile(profile);
+          if (profile?.mealPreferences) {
+            // If preferences exist, maybe directly offer to generate plan or show existing?
+            // For now, still show form but it will be prefilled.
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch user profile", err);
+          toast({ title: "Erro", description: "Não foi possível carregar seu perfil.", variant: "destructive" });
+        })
+        .finally(() => setIsFetchingProfile(false));
+    } else {
+      setIsFetchingProfile(false);
+    }
+  }, [currentUser, toast]);
+
 
   const handleGenerateMealPlan = async () => {
-    if (!currentUser) {
-      // Idealmente, mostrar um toast ou mensagem
-      console.error("Usuário não logado");
+    if (!currentUser || !userProfile) {
+      toast({ title: "Atenção", description: "Perfil do usuário não carregado. Tente novamente.", variant: "destructive" });
       return;
     }
-    setIsLoadingPlan(true);
-    setGeneratedMealPlan(null); 
-    
-    // Simulação de chamada de IA
-    // Em uma implementação real, você chamaria uma server action que usa Genkit
-    // const preferences = await getUserProfile(currentUser.uid).then(p => p?.mealPreferences);
-    // if (preferences) {
-    //   const plan = await generateMealPlanAction(preferences);
-    //   setGeneratedMealPlan(plan);
-    // } else {
-    //   setGeneratedMealPlan(exampleStaticMealPlan); // Fallback para exemplo se não houver prefs
-    // }
-    
-    setTimeout(() => {
-      setGeneratedMealPlan(exampleStaticMealPlan); // Usando o plano estático por enquanto
-      setIsLoadingPlan(false);
-      setShowForm(false); // Oculta o formulário após gerar o plano
-    }, 1500); // Simula delay da IA
-  };
+    if (!userProfile.mealPreferences || Object.values(userProfile.mealPreferences).every(val => !val)) {
+       toast({ title: "Preferências Necessárias", description: "Por favor, salve suas preferências alimentares antes de gerar um cardápio.", variant: "destructive" });
+       setShowForm(true); // Ensure form is visible if preferences are missing
+       return;
+    }
 
-  const handlePreferencesSaved = () => {
-    // Poderia recarregar preferências ou apenas indicar que foram salvas.
-    // Por enquanto, apenas um log.
-    console.log("Preferências salvas, pronto para gerar plano.");
+    setIsLoadingPlan(true);
+    setGeneratedMealPlan(null);
+    setMealPlanDisclaimer(null);
+    
+    try {
+      const planOutput = await generateMealPlanAction(userProfile.mealPreferences, 3); // Generate for 3 days
+      if (planOutput.mealPlan && planOutput.mealPlan.length > 0) {
+        setGeneratedMealPlan(planOutput.mealPlan);
+        setMealPlanDisclaimer(planOutput.disclaimer || "Lembre-se que estas são sugestões e é importante consultar um profissional de saúde.");
+        setShowForm(false); 
+        toast({title: "Cardápio Gerado!", description: "Seu cardápio personalizado está pronto.", className: "bg-success text-success-foreground"});
+      } else {
+        toast({title: "Sem Resultados", description: "A IA não conseguiu gerar um cardápio com as preferências atuais. Tente ajustá-las.", variant: "default"});
+        setGeneratedMealPlan([]); // Set to empty array to indicate no results but IA was called
+      }
+    } catch (error: any) {
+      console.error("Error calling generateMealPlanAction", error);
+      toast({ title: "Erro na Geração", description: error.message || "Não foi possível gerar o cardápio. Tente novamente.", variant: "destructive" });
+      setGeneratedMealPlan(null); // Keep it null on error
+    } finally {
+      setIsLoadingPlan(false);
+    }
+  };
+  
+  const handlePreferencesSaved = async () => {
+    // Refetch profile to ensure we have the latest preferences
+    if (currentUser) {
+      setIsFetchingProfile(true);
+      try {
+        const profile = await getUserProfile(currentUser.uid);
+        setUserProfile(profile);
+        toast({title: "Preferências Salvas", description: "Agora você pode gerar seu cardápio."});
+      } catch (error) {
+         toast({title: "Erro", description: "Não foi possível recarregar o perfil.", variant: "destructive"});
+      } finally {
+        setIsFetchingProfile(false);
+      }
+    }
   };
   
   const handleEditPreferences = () => {
-    setShowForm(true); // Mostra o formulário novamente
-    setGeneratedMealPlan(null); // Limpa o plano gerado para o usuário gerar um novo
+    setShowForm(true); 
+    setGeneratedMealPlan(null); 
+    setMealPlanDisclaimer(null);
   };
 
   return (
@@ -60,83 +108,98 @@ export default function PlanejamentoPage() {
       <header>
         <h1 className="text-3xl md:text-4xl font-bold font-headline text-primary">Planejamento de Refeições</h1>
         <p className="text-muted-foreground mt-2">
-          Aqui você encontrará sugestões de cardápios saudáveis, criados para complementar seu jejum. 
-          Defina suas preferências para que a IA personalize seu plano!
+          Defina suas preferências para que a IA personalize um plano alimentar para complementar seu jejum!
         </p>
       </header>
       
-      {showForm && (
+      {isFetchingProfile && (
+         <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /> Carregando dados do perfil...</div>
+      )}
+
+      {!isFetchingProfile && showForm && (
         <MealPlannerForm onPreferencesSaved={handlePreferencesSaved} />
       )}
 
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-xl font-headline flex items-center text-primary">
-            <Sparkles className="mr-2 h-6 w-6" />
-            Geração de Cardápio com IA
-          </CardTitle>
-          <CardDescription>
-            {showForm 
-              ? "Após salvar suas preferências, clique abaixo para gerar um cardápio semanal."
-              : "Seu cardápio foi gerado. Você pode editar suas preferências para gerar um novo."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!showForm && generatedMealPlan && (
-             <Button onClick={handleEditPreferences} variant="outline" className="mb-4">
-                Editar Preferências e Gerar Novo Cardápio
-            </Button>
-          )}
-          {showForm && (
-            <Button onClick={handleGenerateMealPlan} disabled={isLoadingPlan || !currentUser} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
-              {isLoadingPlan ? (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-5 w-5" />
-              )}
-              Gerar Cardápio Semanal com IA
-            </Button>
-          )}
-          
-          {isLoadingPlan && (
-            <div className="mt-6 flex flex-col items-center justify-center text-muted-foreground">
-              <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
-              <p>Gerando seu cardápio personalizado...</p>
-              <p className="text-xs">(Esta é uma simulação, a IA real está a caminho!)</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {!isFetchingProfile && (
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl font-headline flex items-center text-primary">
+              <Sparkles className="mr-2 h-6 w-6" />
+              Geração de Cardápio com IA
+            </CardTitle>
+            <CardDescription>
+              {showForm 
+                ? "Após salvar suas preferências, clique abaixo para gerar um cardápio."
+                : "Seu cardápio foi gerado. Você pode editar suas preferências para gerar um novo."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!showForm && (generatedMealPlan || generatedMealPlan === null) && ( // Show edit only if plan was shown or attempted
+               <Button onClick={handleEditPreferences} variant="outline" className="mb-4">
+                  Editar Preferências e Gerar Novo Cardápio
+              </Button>
+            )}
+            {showForm && (
+              <Button 
+                onClick={handleGenerateMealPlan} 
+                disabled={isLoadingPlan || !currentUser || isFetchingProfile || !userProfile?.mealPreferences || Object.values(userProfile.mealPreferences).every(val => !val)} 
+                className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground"
+              >
+                {isLoadingPlan ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-5 w-5" />
+                )}
+                Gerar Cardápio com IA ({generatedMealPlan ? 'Novo' : '3 Dias'})
+              </Button>
+            )}
+             {!isLoadingPlan && showForm && userProfile?.mealPreferences && Object.values(userProfile.mealPreferences).every(val => !val) && (
+                <p className="text-sm text-destructive mt-2">
+                  <AlertTriangle className="inline h-4 w-4 mr-1" />
+                  Por favor, preencha e salve suas preferências alimentares para habilitar a geração do cardápio.
+                </p>
+             )}
+            
+            {isLoadingPlan && (
+              <div className="mt-6 flex flex-col items-center justify-center text-muted-foreground">
+                <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
+                <p>Gerando seu cardápio personalizado com IA...</p>
+                <p className="text-xs">(Isso pode levar alguns segundos)</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-      {!isLoadingPlan && generatedMealPlan && (
+      {!isLoadingPlan && generatedMealPlan && generatedMealPlan.length > 0 && (
         <MealPlanDisplay mealPlan={generatedMealPlan} />
       )}
-       {!isLoadingPlan && !generatedMealPlan && !showForm && (
+      {!isLoadingPlan && generatedMealPlan && generatedMealPlan.length === 0 && (
          <Card className="mt-8 shadow-lg">
            <CardHeader>
               <CardTitle className="text-xl font-headline flex items-center text-primary">
                 <Utensils className="mr-2 h-6 w-6" />
-                Seu Cardápio Semanal
+                Cardápio Semanal
               </CardTitle>
            </CardHeader>
            <CardContent>
-             <p className="text-muted-foreground">Clique em "Editar Preferências e Gerar Novo Cardápio" para começar.</p>
+             <p className="text-muted-foreground">A IA não retornou sugestões para as preferências atuais. Tente ajustá-las e gerar novamente.</p>
            </CardContent>
          </Card>
-       )}
+      )}
 
-      <Card className="bg-card shadow-lg mt-8">
-        <CardHeader>
-            <CardTitle className="font-headline text-xl text-primary">Importante</CardTitle>
-        </CardHeader>
-        <CardContent>
-            <p className="text-muted-foreground text-sm">
-            As sugestões de cardápio são geradas por IA e devem servir como inspiração. 
-            Consulte sempre um nutricionista ou profissional de saúde para um plano alimentar individualizado e adequado às suas necessidades e condições de saúde.
-            Não nos responsabilizamos por quaisquer decisões alimentares baseadas unicamente nas sugestões fornecidas.
-            </p>
-        </CardContent>
-      </Card>
+      {mealPlanDisclaimer && !isLoadingPlan && generatedMealPlan && generatedMealPlan.length > 0 && (
+        <Card className="bg-card shadow-lg mt-8">
+          <CardHeader>
+              <CardTitle className="font-headline text-lg text-primary flex items-center"><AlertTriangle className="mr-2 h-5 w-5 text-accent"/>Importante</CardTitle>
+          </CardHeader>
+          <CardContent>
+              <p className="text-muted-foreground text-sm">
+                {mealPlanDisclaimer}
+              </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
