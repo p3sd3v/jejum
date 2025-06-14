@@ -1,3 +1,4 @@
+
 "use client";
 import React, { type ReactNode } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -9,7 +10,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
       attribute="class" 
       defaultTheme="system" 
       enableSystem
-      enableColorScheme={true} // Explicitly set to the default value
+      enableColorScheme={false} // Alterado para false
     >
       <AuthProvider>
         {children}
