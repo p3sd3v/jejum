@@ -17,19 +17,19 @@ export default function SuportePage() {
             Central de Ajuda
           </CardTitle>
           <CardDescription>
-            Perguntas frequentes e informações de contato.
+            Informações de contato.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p>Se você tiver alguma dúvida ou problema, nossa equipe de suporte está pronta para ajudar.</p>
           <div className="flex items-center space-x-2">
             <Mail className="h-5 w-5 text-primary" />
-            <a href="mailto:suporte@secajejum.app" className="text-accent hover:underline">
-              suporte@secajejum.app
+            <a href="mailto:secajejumofcial@gmail.com" className="text-accent hover:underline">
+              secajejumofcial@gmail.com
             </a>
           </div>
           <p className="text-muted-foreground text-sm">
-            (Este é um email de exemplo. Funcionalidade de suporte em breve.)
+            Responderemos o mais breve possível.
           </p>
         </CardContent>
       </Card>
