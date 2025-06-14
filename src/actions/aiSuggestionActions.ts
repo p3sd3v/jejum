@@ -57,7 +57,6 @@ export async function getAISuggestionHistory(userId: string): Promise<ClientAISu
     querySnapshot.forEach((docSnap) => {
       const data = docSnap.data(); 
       
-      // Robust check for required fields and their types
       if (data && 
           typeof data.userId === 'string' && 
           typeof data.userInput === 'object' && data.userInput !== null &&
@@ -65,19 +64,18 @@ export async function getAISuggestionHistory(userId: string): Promise<ClientAISu
           data.createdAt instanceof Timestamp && 
           data.updatedAt instanceof Timestamp) {  
         
-        // Construct the object to pass to toClientAISuggestionRequest
         const requestDataForClient: Omit<AISuggestionRequest, 'id'> = {
             userId: data.userId,
-            userInput: data.userInput as SuggestFastingTimesInput['userProfile'], // Cast to the expected type
-            status: data.status as AISuggestionRequest['status'], // Cast to the expected type
+            userInput: data.userInput as SuggestFastingTimesInput['userProfile'],
+            status: data.status as AISuggestionRequest['status'],
             createdAt: data.createdAt, 
             updatedAt: data.updatedAt, 
-            suggestionOutput: data.suggestionOutput, // This can be undefined
-            error: data.error, // This can be undefined
+            suggestionOutput: data.suggestionOutput,
+            error: data.error,
         };
         history.push(toClientAISuggestionRequest(docSnap.id, requestDataForClient));
       } else {
-        console.warn(`Document ${docSnap.id} in 'ai_suggestion_requests' for userId ${userId} is malformed or missing required Timestamp fields (createdAt, updatedAt). Skipping. Data:`, JSON.stringify(data));
+        console.warn(`Document ${docSnap.id} in 'ai_suggestion_requests' for userId ${userId} is malformed or missing required Timestamp fields (createdAt, updatedAt). Skipping. Data:`, JSON.stringify(data, null, 2));
       }
     });
     return history;
@@ -93,7 +91,6 @@ export async function getAISuggestionHistory(userId: string): Promise<ClientAISu
         Please create this index in your Firebase console. The error message above or in your Firebase project's Firestore console might provide a direct link to create it.`
         );
     }
-    // Return empty array on error to prevent breaking UI, component should handle empty state.
     return []; 
   }
 }

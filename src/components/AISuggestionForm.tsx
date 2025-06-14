@@ -58,6 +58,7 @@ const AISuggestionForm: React.FC = () => {
     } catch (error) {
       console.error("Failed to fetch suggestion history", error);
       toast({ title: "Erro ao Carregar Histórico", description: "Não foi possível buscar o histórico de sugestões.", variant: "destructive" });
+      setSuggestionHistory([]); // Clear history on error
     } finally {
       setIsLoadingHistory(false);
     }
@@ -85,7 +86,7 @@ const AISuggestionForm: React.FC = () => {
       fetchHistory();
     } else {
       setIsFetchingProfile(false);
-      setIsLoadingHistory(false);
+      setIsLoadingHistory(false); // Ensure loading is false if no user
     }
   }, [currentUser, form, fetchHistory]);
 
@@ -111,6 +112,7 @@ const AISuggestionForm: React.FC = () => {
         } else {
           toast({ title: "Erro", description: "Solicitação de sugestão não encontrada.", variant: "destructive" });
           setCurrentSuggestionRequest(null);
+          fetchHistory(); // Refresh history in case it was deleted externally
           if (unsubscribe) unsubscribe();
         }
       }, (error) => {
@@ -135,23 +137,24 @@ const AISuggestionForm: React.FC = () => {
       return;
     }
     setIsSubmitting(true);
-    setCurrentSuggestionRequest(null);
+    setCurrentSuggestionRequest(null); // Clear previous current suggestion display
 
     const input: SuggestFastingTimesInput = { userProfile: data };
 
     try {
       const requestId = await createAISuggestionRequest(currentUser.uid, input);
+      // Set up a temporary client object for immediate feedback while listener picks up
       setCurrentSuggestionRequest({
         id: requestId,
         userId: currentUser.uid,
         userInput: data,
-        status: 'pending',
+        status: 'pending', // Will be updated by the listener
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
       toast({ title: "Solicitação Enviada!", description: "Sua sugestão está sendo processada. Aguarde..." });
-      await updateUserAIProfile(currentUser.uid, data);
-      fetchHistory(); 
+      await updateUserAIProfile(currentUser.uid, data); // Save profile data
+      // fetchHistory(); // Listener will call fetchHistory when current request updates
     } catch (error: any) {
       toast({ title: "Erro ao Solicitar Sugestão", description: error.message, variant: "destructive" });
       setCurrentSuggestionRequest(null);
@@ -164,17 +167,17 @@ const AISuggestionForm: React.FC = () => {
     return <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /> Carregando perfil...</div>;
   }
 
-  const isProcessing = currentSuggestionRequest?.status === 'pending' || currentSuggestionRequest?.status === 'processing';
+  const isProcessingCurrent = currentSuggestionRequest?.status === 'pending' || currentSuggestionRequest?.status === 'processing';
 
   const getStatusBadgeVariant = (status: ClientAISuggestionRequest['status']): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case 'completed':
-        return 'default'; 
+        return 'default'; // Using 'default' for success (green in my theme)
       case 'error':
         return 'destructive';
       case 'pending':
       case 'processing':
-        return 'secondary'; 
+        return 'secondary'; // Neutral/gray for pending/processing
       default:
         return 'outline';
     }
@@ -199,12 +202,12 @@ const AISuggestionForm: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="age">Idade</Label>
-                <Input id="age" type="number" {...form.register('age')} disabled={isSubmitting || isProcessing} />
+                <Input id="age" type="number" {...form.register('age')} disabled={isSubmitting || isProcessingCurrent} />
                 {form.formState.errors.age && <p className="text-sm text-destructive">{form.formState.errors.age.message}</p>}
               </div>
               <div>
                 <Label htmlFor="gender">Gênero</Label>
-                <Select onValueChange={(value) => form.setValue('gender', value)} defaultValue={form.getValues('gender')} disabled={isSubmitting || isProcessing}>
+                <Select onValueChange={(value) => form.setValue('gender', value)} defaultValue={form.getValues('gender')} disabled={isSubmitting || isProcessingCurrent}>
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="male">Masculino</SelectItem>
@@ -216,7 +219,7 @@ const AISuggestionForm: React.FC = () => {
               </div>
               <div>
                 <Label htmlFor="activityLevel">Nível de Atividade Física</Label>
-                <Select onValueChange={(value) => form.setValue('activityLevel', value)} defaultValue={form.getValues('activityLevel')} disabled={isSubmitting || isProcessing}>
+                <Select onValueChange={(value) => form.setValue('activityLevel', value)} defaultValue={form.getValues('activityLevel')} disabled={isSubmitting || isProcessingCurrent}>
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="sedentary">Sedentário (pouco ou nenhum exercício)</SelectItem>
@@ -230,7 +233,7 @@ const AISuggestionForm: React.FC = () => {
               </div>
               <div>
                 <Label htmlFor="fastingExperience">Experiência com Jejum</Label>
-                <Select onValueChange={(value) => form.setValue('fastingExperience', value)} defaultValue={form.getValues('fastingExperience')} disabled={isSubmitting || isProcessing}>
+                <Select onValueChange={(value) => form.setValue('fastingExperience', value)} defaultValue={form.getValues('fastingExperience')} disabled={isSubmitting || isProcessingCurrent}>
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="beginner">Iniciante (nunca fiz ou poucas vezes)</SelectItem>
@@ -242,25 +245,25 @@ const AISuggestionForm: React.FC = () => {
               </div>
               <div className="md:col-span-2">
                 <Label htmlFor="sleepSchedule">Horário de Sono (ex: 22:00 - 06:00)</Label>
-                <Input id="sleepSchedule" type="text" {...form.register('sleepSchedule')} placeholder="Ex: 22:30 - 07:00" disabled={isSubmitting || isProcessing}/>
+                <Input id="sleepSchedule" type="text" {...form.register('sleepSchedule')} placeholder="Ex: 22:30 - 07:00" disabled={isSubmitting || isProcessingCurrent}/>
                 {form.formState.errors.sleepSchedule && <p className="text-sm text-destructive">{form.formState.errors.sleepSchedule.message}</p>}
               </div>
               <div className="md:col-span-2">
                 <Label htmlFor="dailyRoutine">Rotina Diária</Label>
-                <Textarea id="dailyRoutine" {...form.register('dailyRoutine')} placeholder="Descreva seus horários de refeição, trabalho, exercícios, etc." rows={4} disabled={isSubmitting || isProcessing}/>
+                <Textarea id="dailyRoutine" {...form.register('dailyRoutine')} placeholder="Descreva seus horários de refeição, trabalho, exercícios, etc." rows={4} disabled={isSubmitting || isProcessingCurrent}/>
                 {form.formState.errors.dailyRoutine && <p className="text-sm text-destructive">{form.formState.errors.dailyRoutine.message}</p>}
               </div>
             </div>
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting || isFetchingProfile || isProcessing}>
-              {(isSubmitting || isProcessing) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              {isProcessing ? 'Processando Sugestão...' : isSubmitting ? 'Enviando Solicitação...' : 'Obter Sugestão da IA'}
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting || isFetchingProfile || isProcessingCurrent}>
+              {(isSubmitting || isProcessingCurrent) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              {isProcessingCurrent ? 'Processando Sugestão...' : isSubmitting ? 'Enviando Solicitação...' : 'Obter Sugestão da IA'}
             </Button>
           </form>
         </CardContent>
         {currentSuggestionRequest && currentSuggestionRequest.status === 'completed' && currentSuggestionRequest.suggestionOutput && (
           <CardFooter className="mt-6 border-t border-border pt-6">
             <div className="space-y-4 w-full">
-              <h3 className="text-xl font-headline text-primary">Sugestão Personalizada:</h3>
+              <h3 className="text-xl font-headline text-primary">Sugestão Personalizada Recebida:</h3>
               <p><strong className="font-medium">Início do Jejum:</strong> {currentSuggestionRequest.suggestionOutput.suggestedStartTime}</p>
               <p><strong className="font-medium">Fim do Jejum:</strong> {currentSuggestionRequest.suggestionOutput.suggestedEndTime}</p>
               <p className="text-sm"><strong className="font-medium">Raciocínio:</strong> {currentSuggestionRequest.suggestionOutput.reasoning}</p>
@@ -270,12 +273,12 @@ const AISuggestionForm: React.FC = () => {
         {currentSuggestionRequest && currentSuggestionRequest.status === 'error' && (
            <CardFooter className="mt-6 border-t border-border pt-6">
             <div className="space-y-2 w-full text-destructive">
-              <h3 className="text-xl font-headline flex items-center"><AlertTriangle className="mr-2 h-6 w-6"/>Erro na Sugestão</h3>
+              <h3 className="text-xl font-headline flex items-center"><AlertTriangle className="mr-2 h-6 w-6"/>Erro na Sugestão Atual</h3>
               <p>{currentSuggestionRequest.error || "Não foi possível gerar sua sugestão no momento. Tente novamente mais tarde."}</p>
             </div>
           </CardFooter>
         )}
-         {isProcessing && (
+         {isProcessingCurrent && (
            <CardFooter className="mt-6 border-t border-border pt-6">
               <div className="flex items-center text-muted-foreground w-full justify-center">
                   <Loader2 className="mr-2 h-5 w-5 animate-spin text-primary" />
@@ -292,11 +295,11 @@ const AISuggestionForm: React.FC = () => {
             Histórico de Sugestões
           </CardTitle>
           <CardDescription>
-            Seu histórico de {suggestionHistory.length > 0 ? `${suggestionHistory.length} ` : ''}sugestões solicitadas.
+            Aqui são exibidas todas as requisições de sugestões que você já fez.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoadingHistory && !suggestionHistory.length ? (
+          {isLoadingHistory ? (
             <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /> Carregando histórico...</div>
           ) : suggestionHistory.length > 0 ? (
             <ScrollArea className="h-[400px] pr-4">
@@ -315,8 +318,8 @@ const AISuggestionForm: React.FC = () => {
                          'Erro'}
                       </Badge>
                     </div>
-                    <p className="text-xs text-foreground/80 mb-1">
-                      <span className="font-medium">Perfil Enviado:</span> Idade {item.userInput.age}, {item.userInput.gender}, {item.userInput.activityLevel}.
+                    <p className="text-xs text-foreground/80 mb-1 truncate">
+                      <span className="font-medium">Perfil Usado:</span> Idade {item.userInput.age}, {item.userInput.gender}, {item.userInput.activityLevel}. Exp: {item.userInput.fastingExperience}.
                     </p>
                     {item.status === 'completed' && item.suggestionOutput && (
                       <div className="mt-2 pt-2 border-t border-border/50">
@@ -341,7 +344,7 @@ const AISuggestionForm: React.FC = () => {
               </div>
             </ScrollArea>
           ) : (
-            <p className="text-center text-muted-foreground py-4">Nenhuma sugestão no histórico ainda.</p>
+            <p className="text-center text-muted-foreground py-8">Nenhuma sugestão no histórico ainda.</p>
           )}
         </CardContent>
       </Card>
