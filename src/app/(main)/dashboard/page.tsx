@@ -6,13 +6,18 @@ import FastingTimer from '@/components/FastingTimer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Droplet, Zap } from 'lucide-react';
+import { Droplet, Zap, TrendingUp, PlusCircle } from 'lucide-react';
 import WeightProgressChart from '@/components/WeightProgressChart';
+import AddWeightEntryForm from '@/components/AddWeightEntryForm';
 import { useAuth } from '@/contexts/AuthContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+
 
 export default function DashboardPage() {
   const { currentUser } = useAuth();
   const [historyKey, setHistoryKey] = useState(0);
+  const [weightChartKey, setWeightChartKey] = useState(0);
+  const [isWeightDialogValid, setIsWeightDialogValidad] = useState(false);
   const [currentFastingProgress, setCurrentFastingProgress] = useState(0);
   const [fastingGoalHours, setFastingGoalHours] = useState<number | undefined>(undefined);
 
@@ -25,18 +30,21 @@ export default function DashboardPage() {
 
   const handleFastEnded = () => {
     setHistoryKey(prevKey => prevKey + 1);
-    setCurrentFastingProgress(0); // Reset progress when fast ends
-    setFastingGoalHours(undefined); // Reset goal display
+    setCurrentFastingProgress(0); 
+    setFastingGoalHours(undefined); 
+  };
+
+  const handleWeightAdded = () => {
+    setWeightChartKey(prevKey => prevKey + 1);
+    setIsWeightDialogValidad(false); // Close dialog
   };
 
   const handleBeberAgua = () => {
     alert("Lembrete: Mantenha-se hidratado!");
-    // Future: Log water intake action
   };
 
   const handleMotivacao = () => {
     alert("Motivação do Dia: Você é capaz!");
-    // Future: Fetch and display AI motivation tip
   };
 
   return (
@@ -46,30 +54,57 @@ export default function DashboardPage() {
           <CardTitle className="text-xl font-headline text-foreground">Seu Jejum Atual</CardTitle>
         </CardHeader>
         <CardContent>
-          <FastingTimer onFastEnded={handleFastEnded} onTimerUpdate={handleTimerUpdate} />
+          <FastingTimer 
+            onFastEnded={handleFastEnded} 
+            onTimerUpdate={handleTimerUpdate} 
+          />
         </CardContent>
       </Card>
 
       <Card className="bg-card shadow-lg">
         <CardHeader>
           <CardTitle className="text-xl font-headline text-foreground">Progresso do Jejum</CardTitle>
-          {fastingGoalHours !== undefined && currentFastingProgress > 0 && (
+          {fastingGoalHours !== undefined && currentFastingProgress >= 0 && ( // Show even if 0%
             <CardDescription className="text-muted-foreground">Meta: {fastingGoalHours} horas</CardDescription>
           )}
         </CardHeader>
         <CardContent className="space-y-4">
           <Progress value={currentFastingProgress} className="w-full h-3 [&>div]:bg-primary" />
-          <p className="text-sm text-center text-muted-foreground">{currentFastingProgress > 0 ? `${currentFastingProgress.toFixed(0)}% completo` : 'Nenhum jejum ativo.'}</p>
+          <p className="text-sm text-center text-muted-foreground">
+            {currentFastingProgress > 0 ? `${currentFastingProgress.toFixed(0)}% completo` : (activeFastingGoal() ? 'Pronto para começar sua meta!' : 'Nenhum jejum ativo.')}
+          </p>
         </CardContent>
       </Card>
 
       <Card className="bg-card shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-xl font-headline text-foreground">Progresso de Emagrecimento</CardTitle>
-          <CardDescription className="text-muted-foreground">Acompanhe sua jornada de perda de peso.</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl font-headline text-foreground flex items-center">
+              <TrendingUp className="mr-2 h-6 w-6 text-primary" /> Progresso de Emagrecimento
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">Acompanhe sua jornada de perda de peso.</CardDescription>
+          </div>
+          <Dialog open={isWeightDialogValidad} onOpenChange={setIsWeightDialogValidad}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="ml-auto border-primary text-primary hover:bg-primary/10">
+                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Peso
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-card">
+              <DialogHeader>
+                <DialogTitle className="font-headline text-foreground">Registrar Novo Peso</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Adicione sua medição de peso atual e a data.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <AddWeightEntryForm onWeightAdded={handleWeightAdded} onOpenChange={setIsWeightDialogValidad} />
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardHeader>
         <CardContent className="min-h-[320px] flex flex-col items-center justify-center">
-          {currentUser && <WeightProgressChart />}
+          {currentUser && <WeightProgressChart key={weightChartKey} />}
           {!currentUser && <p className="text-muted-foreground">Carregando dados do usuário...</p>}
         </CardContent>
       </Card>
@@ -92,4 +127,10 @@ export default function DashboardPage() {
       </section>
     </div>
   );
+
+  function activeFastingGoal() {
+    // This helper can be expanded if you have a way to know if a fast is active
+    // For now, it just checks if goalHours is set.
+    return fastingGoalHours !== undefined;
+  }
 }
