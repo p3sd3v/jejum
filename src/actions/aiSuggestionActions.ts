@@ -34,41 +34,66 @@ export async function createAISuggestionRequest(userId: string, input: SuggestFa
 }
 
 export async function getAISuggestionHistory(userId: string): Promise<ClientAISuggestionRequest[]> {
-  if (!userId) return [];
+  if (!userId) {
+    console.warn("getAISuggestionHistory called with no userId.");
+    return [];
+  }
 
   try {
     const q = query(
       collection(db, 'ai_suggestion_requests'),
       where('userId', '==', userId),
       orderBy('createdAt', 'desc')
-      // Removido: limit(limitCount) para buscar todas as sugestões
     );
 
     const querySnapshot = await getDocs(q);
     
+    if (querySnapshot.empty) {
+      console.log(`No AI suggestion requests found for userId: ${userId} in 'ai_suggestion_requests' collection.`);
+      return [];
+    }
+
     const history: ClientAISuggestionRequest[] = [];
     querySnapshot.forEach((docSnap) => {
-      const data = docSnap.data() as Omit<AISuggestionRequest, 'id'>;
-      if (data.createdAt && data.updatedAt) {
-         history.push(toClientAISuggestionRequest(docSnap.id, data));
+      const data = docSnap.data(); 
+      
+      // Robust check for required fields and their types
+      if (data && 
+          typeof data.userId === 'string' && 
+          typeof data.userInput === 'object' && data.userInput !== null &&
+          typeof data.status === 'string' &&
+          data.createdAt instanceof Timestamp && 
+          data.updatedAt instanceof Timestamp) {  
+        
+        // Construct the object to pass to toClientAISuggestionRequest
+        const requestDataForClient: Omit<AISuggestionRequest, 'id'> = {
+            userId: data.userId,
+            userInput: data.userInput as SuggestFastingTimesInput['userProfile'], // Cast to the expected type
+            status: data.status as AISuggestionRequest['status'], // Cast to the expected type
+            createdAt: data.createdAt, 
+            updatedAt: data.updatedAt, 
+            suggestionOutput: data.suggestionOutput, // This can be undefined
+            error: data.error, // This can be undefined
+        };
+        history.push(toClientAISuggestionRequest(docSnap.id, requestDataForClient));
       } else {
-        console.warn(`Suggestion request ${docSnap.id} is missing timestamps.`);
+        console.warn(`Document ${docSnap.id} in 'ai_suggestion_requests' for userId ${userId} is malformed or missing required Timestamp fields (createdAt, updatedAt). Skipping. Data:`, JSON.stringify(data));
       }
     });
     return history;
 
   } catch (error: any) {
-    console.error("Error fetching AI suggestion history:", error);
-    if (error.code === 'failed-precondition' && error.message.includes('index')) {
+    console.error("Error fetching AI suggestion history for userId:", userId, error);
+    if (error.code === 'failed-precondition' && error.message && typeof error.message === 'string' && error.message.includes('index')) {
         console.error(
         `Firestore Index Required for getAISuggestionHistory: 
         Collection ID: 'ai_suggestion_requests'. 
         Fields: 'userId' (Ascending), 'createdAt' (Descending).
         Query scopes: Collection.
-        Please create this index in your Firebase console.`
+        Please create this index in your Firebase console. The error message above or in your Firebase project's Firestore console might provide a direct link to create it.`
         );
     }
+    // Return empty array on error to prevent breaking UI, component should handle empty state.
     return []; 
   }
 }
-
