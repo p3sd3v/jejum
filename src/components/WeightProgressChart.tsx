@@ -40,7 +40,7 @@ const WeightProgressChart: React.FC = () => {
   useEffect(() => {
     if (currentUser?.uid) {
       setIsLoading(true);
-      getWeightHistory(currentUser.uid, 180) 
+      getWeightHistory(currentUser.uid, 180) // Fetch enough data for aggregations
         .then(data => {
           setRawData(data);
         })
@@ -60,7 +60,7 @@ const WeightProgressChart: React.FC = () => {
 
     if (timeView === 'day') {
       return entriesWithDates
-        .slice(-15) 
+        .slice(-7) // Show last 7 days
         .map(entry => ({
           date: format(entry.dateObj, 'dd/MM', { locale: ptBR }),
           weight: entry.weight,
@@ -71,7 +71,7 @@ const WeightProgressChart: React.FC = () => {
     const aggregate = (
       intervalFn: (date: Date) => Date,
       dateFormat: string,
-      numIntervals: number
+      numIntervals: number // This will now always be 7
     ) => {
       const aggregated: { [key: string]: { totalWeight: number; count: number; date: Date } } = {};
       entriesWithDates.forEach(entry => {
@@ -90,13 +90,13 @@ const WeightProgressChart: React.FC = () => {
           originalDate: data.date,
         }))
         .sort((a, b) => a.originalDate.getTime() - b.originalDate.getTime())
-        .slice(-numIntervals);
+        .slice(-numIntervals); // Use numIntervals (which will be 7)
     };
 
     if (timeView === 'week') {
-      return aggregate(date => startOfWeek(date, { locale: ptBR }), "dd/MM", 12); 
+      return aggregate(date => startOfWeek(date, { locale: ptBR }), "dd/MM", 7); // Show last 7 weeks
     } else { // month
-      return aggregate(startOfMonth, "MMM/yy", 12); 
+      return aggregate(startOfMonth, "MMM/yy", 7); // Show last 7 months
     }
   }, [rawData, timeView]);
 
