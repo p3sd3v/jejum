@@ -16,7 +16,7 @@ import { createAISuggestionRequest, getAISuggestionHistory } from '@/actions/aiS
 import type { SuggestFastingTimesInput } from '@/ai/flows/suggest-fasting-times';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserProfile, updateUserAIProfile } from '@/actions/userProfileActions';
-import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { doc, onSnapshot, Unsubscribe, Timestamp } from 'firebase/firestore'; // Added Timestamp
 import { db } from '@/lib/firebase';
 import type { AISuggestionRequest, ClientAISuggestionRequest } from '@/actions/aiSuggestionTypes';
 import { toClientAISuggestionRequest } from '@/actions/aiSuggestionTypes';
@@ -58,7 +58,7 @@ const AISuggestionForm: React.FC = () => {
     } catch (error) {
       console.error("Failed to fetch suggestion history", error);
       toast({ title: "Erro ao Carregar Histórico", description: "Não foi possível buscar o histórico de sugestões.", variant: "destructive" });
-      setSuggestionHistory([]); // Clear history on error
+      setSuggestionHistory([]);
     } finally {
       setIsLoadingHistory(false);
     }
@@ -86,7 +86,7 @@ const AISuggestionForm: React.FC = () => {
       fetchHistory();
     } else {
       setIsFetchingProfile(false);
-      setIsLoadingHistory(false); // Ensure loading is false if no user
+      setIsLoadingHistory(false);
     }
   }, [currentUser, form, fetchHistory]);
 
@@ -96,23 +96,30 @@ const AISuggestionForm: React.FC = () => {
       const requestDocRef = doc(db, 'ai_suggestion_requests', currentSuggestionRequest.id);
       unsubscribe = onSnapshot(requestDocRef, (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as Omit<AISuggestionRequest, 'id'>;
-          const clientData = toClientAISuggestionRequest(docSnap.id, data);
-          setCurrentSuggestionRequest(clientData);
+          const data = docSnap.data();
+          // Ensure Timestamps are handled correctly before passing to toClientAISuggestionRequest
+           if (data && data.createdAt instanceof Timestamp && data.updatedAt instanceof Timestamp) {
+            const firestoreData = data as Omit<AISuggestionRequest, 'id'>; // Cast after checking
+            const clientData = toClientAISuggestionRequest(docSnap.id, firestoreData);
+            setCurrentSuggestionRequest(clientData);
 
-          if (clientData.status === 'completed') {
-            toast({ title: "Sugestão Gerada!", description: "Confira a sugestão personalizada para você." });
-            fetchHistory(); 
-            if (unsubscribe) unsubscribe();
-          } else if (clientData.status === 'error') {
-            toast({ title: "Erro ao Processar Sugestão", description: clientData.error || "Ocorreu um erro no servidor.", variant: "destructive" });
-            fetchHistory(); 
-            if (unsubscribe) unsubscribe();
+            if (clientData.status === 'completed') {
+              toast({ title: "Sugestão Gerada!", description: "Confira a sugestão personalizada para você." });
+              fetchHistory(); 
+              if (unsubscribe) unsubscribe();
+            } else if (clientData.status === 'error') {
+              toast({ title: "Erro ao Processar Sugestão", description: clientData.error || "Ocorreu um erro no servidor.", variant: "destructive" });
+              fetchHistory(); 
+              if (unsubscribe) unsubscribe();
+            }
+          } else {
+             console.warn("Suggestion document data is malformed or missing Timestamps, cannot process update:", docSnap.id, data);
+             // Optionally, set status to error if data is unusable
           }
         } else {
           toast({ title: "Erro", description: "Solicitação de sugestão não encontrada.", variant: "destructive" });
           setCurrentSuggestionRequest(null);
-          fetchHistory(); // Refresh history in case it was deleted externally
+          fetchHistory(); 
           if (unsubscribe) unsubscribe();
         }
       }, (error) => {
@@ -137,24 +144,22 @@ const AISuggestionForm: React.FC = () => {
       return;
     }
     setIsSubmitting(true);
-    setCurrentSuggestionRequest(null); // Clear previous current suggestion display
+    setCurrentSuggestionRequest(null);
 
     const input: SuggestFastingTimesInput = { userProfile: data };
 
     try {
       const requestId = await createAISuggestionRequest(currentUser.uid, input);
-      // Set up a temporary client object for immediate feedback while listener picks up
       setCurrentSuggestionRequest({
         id: requestId,
         userId: currentUser.uid,
         userInput: data,
-        status: 'pending', // Will be updated by the listener
+        status: 'pending', 
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
       toast({ title: "Solicitação Enviada!", description: "Sua sugestão está sendo processada. Aguarde..." });
-      await updateUserAIProfile(currentUser.uid, data); // Save profile data
-      // fetchHistory(); // Listener will call fetchHistory when current request updates
+      await updateUserAIProfile(currentUser.uid, data);
     } catch (error: any) {
       toast({ title: "Erro ao Solicitar Sugestão", description: error.message, variant: "destructive" });
       setCurrentSuggestionRequest(null);
@@ -172,12 +177,12 @@ const AISuggestionForm: React.FC = () => {
   const getStatusBadgeVariant = (status: ClientAISuggestionRequest['status']): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case 'completed':
-        return 'default'; // Using 'default' for success (green in my theme)
+        return 'default';
       case 'error':
         return 'destructive';
       case 'pending':
       case 'processing':
-        return 'secondary'; // Neutral/gray for pending/processing
+        return 'secondary'; 
       default:
         return 'outline';
     }
@@ -295,7 +300,7 @@ const AISuggestionForm: React.FC = () => {
             Histórico de Sugestões
           </CardTitle>
           <CardDescription>
-            Aqui são exibidas todas as requisições de sugestões que você já fez.
+            Aqui são exibidas todas as suas solicitações de sugestões, com seus respectivos status.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -305,13 +310,13 @@ const AISuggestionForm: React.FC = () => {
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-4">
                 {suggestionHistory.map((item) => (
-                  <Card key={item.id} className="p-4 bg-muted/30">
-                    <div className="flex justify-between items-start mb-2">
+                  <Card key={item.id} className="p-4 bg-card shadow-sm">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-start mb-2">
                       <p className="text-sm text-muted-foreground flex items-center">
-                        <CalendarDays className="h-4 w-4 mr-1.5"/>
+                        <CalendarDays className="h-4 w-4 mr-1.5 flex-shrink-0" />
                         {format(new Date(item.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                       </p>
-                       <Badge variant={getStatusBadgeVariant(item.status)} className="capitalize">
+                       <Badge variant={getStatusBadgeVariant(item.status)} className="capitalize self-start sm:self-auto">
                         {item.status === 'pending' ? 'Pendente' : 
                          item.status === 'processing' ? 'Processando' :
                          item.status === 'completed' ? 'Concluído' :
@@ -319,12 +324,12 @@ const AISuggestionForm: React.FC = () => {
                       </Badge>
                     </div>
                     <p className="text-xs text-foreground/80 mb-1 truncate">
-                      <span className="font-medium">Perfil Usado:</span> Idade {item.userInput.age}, {item.userInput.gender}, {item.userInput.activityLevel}. Exp: {item.userInput.fastingExperience}.
+                      <span className="font-medium">Perfil Usado:</span> Idade {item.userInput.age}, {item.userInput.gender.substring(0,10)}, Ativ: {item.userInput.activityLevel.substring(0,10)}. Exp: {item.userInput.fastingExperience.substring(0,10)}.
                     </p>
                     {item.status === 'completed' && item.suggestionOutput && (
                       <div className="mt-2 pt-2 border-t border-border/50">
                         <p className="text-sm"><strong className="font-medium text-primary">Sugestão:</strong> Início: {item.suggestionOutput.suggestedStartTime}, Fim: {item.suggestionOutput.suggestedEndTime}</p>
-                        <p className="text-xs text-muted-foreground mt-1"><strong className="font-medium">Raciocínio:</strong> {item.suggestionOutput.reasoning.substring(0,150)}{item.suggestionOutput.reasoning.length > 150 ? '...' : ''}</p>
+                        <p className="text-xs text-muted-foreground mt-1"><strong className="font-medium">Raciocínio:</strong> {item.suggestionOutput.reasoning}</p>
                       </div>
                     )}
                     {item.status === 'error' && (
@@ -353,3 +358,4 @@ const AISuggestionForm: React.FC = () => {
 };
 
 export default AISuggestionForm;
+
