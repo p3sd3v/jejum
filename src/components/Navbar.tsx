@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, BookOpenCheck, Palette, ShieldCheck, Lightbulb } from 'lucide-react';
+import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, BookOpenCheck, Palette, ShieldCheck, Lightbulb, Brain } from 'lucide-react'; // Added Brain
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import React from 'react';
 
 const navLinksDefinition = [
+  { href: "/dashboard", label: "Dashboard", icon: Palette }, // Changed from /dashboard to /dashboard, and icon
   { href: "/planejamento", label: "Planejamento", icon: ListChecks },
   { href: "/progresso", label: "Progresso", icon: Award },
   { href: "/desafios", label: "Desafios", icon: ShieldCheck },
+  { href: "/suggestions", label: "Sugestões IA", icon: Brain }, // Added AI Suggestions
   { href: "/guia", label: "Guia", icon: BookOpenCheck },
   { href: "/profile", label: "Perfil", icon: UserCircle },
   { href: "/configuracoes", label: "Configurações", icon: Settings },
@@ -35,6 +37,8 @@ const IconMenu = (props: React.SVGProps<SVGSVGElement>) => (
     <line x1="3" y1="18" x2="21" y2="18" />
   </svg>
 );
+IconMenu.displayName = 'IconMenu';
+
 
 const NavLinkItem = React.memo(({ href, label, icon: Icon, onClick }: { href: string, label: string, icon: React.ElementType, onClick: () => void }) => (
   <Button variant="ghost" size="sm" asChild className="w-full justify-start text-foreground hover:text-primary hover:bg-primary/10">
@@ -63,11 +67,12 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logout();
-    setIsSheetOpen(false);
+    setIsSheetOpen(false); // Close sheet on logout
     router.push('/login');
   };
 
   const closeSheet = () => setIsSheetOpen(false);
+
 
   return (
     <nav className="bg-background border-b border-border shadow-sm sticky top-0 z-50">
@@ -109,7 +114,7 @@ const Navbar = () => {
                     {navLinksDefinition.map(link => (
                       <NavLinkItem key={link.href} href={link.href} label={link.label} icon={link.icon} onClick={closeSheet} />
                     ))}
-                    <div className="mt-auto">
+                    <div className="mt-auto"> {/* Pushes logout to bottom */}
                        <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-destructive hover:bg-destructive/10">
                         <LogOut className="h-5 w-5 mr-3" />
                         Sair
