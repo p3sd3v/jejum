@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, Info, Menu, BookOpenCheck, Palette, ShieldCheck } from 'lucide-react'; 
+import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, BookOpenCheck, Palette, ShieldCheck } from 'lucide-react'; 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import React from 'react';
 
@@ -22,8 +22,7 @@ const Navbar = () => {
   const navLinks = [
     { href: "/planejamento", label: "Planejamento", icon: ListChecks },
     { href: "/progresso", label: "Progresso", icon: Award },
-    { href: "/desafios", label: "Desafios", icon: ShieldCheck }, // Novo link "Desafios"
-    { href: "/dicas", label: "Dicas", icon: Info },
+    { href: "/desafios", label: "Desafios", icon: ShieldCheck },
     { href: "/guia", label: "Guia", icon: BookOpenCheck },
     { href: "/profile", label: "Perfil", icon: UserCircle },
     { href: "/configuracoes", label: "Configurações", icon: Settings }, 
@@ -73,7 +72,7 @@ const Navbar = () => {
               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon">
-                    <Menu className="h-6 w-6 text-primary" />
+                    <IconMenu className="h-6 w-6 text-primary" />
                     <span className="sr-only">Abrir menu</span>
                   </Button>
                 </SheetTrigger>
@@ -104,5 +103,26 @@ const Navbar = () => {
     </nav>
   );
 };
+
+// Helper component for Menu icon to avoid direct import if not available in lucide-react
+// This is a simplified version. If 'Menu' is indeed from lucide-react, you can directly use it.
+const IconMenu = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
 
 export default Navbar;
