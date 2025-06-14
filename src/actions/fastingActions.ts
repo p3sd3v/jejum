@@ -2,39 +2,8 @@
 "use server";
 import { db } from '@/lib/firebase';
 import { collection, addDoc, doc, updateDoc, getDoc, query, where, orderBy, limit, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
-
-export interface FastingSession {
-  id?: string;
-  userId: string;
-  startTime: Timestamp;
-  endTime?: Timestamp | null;
-  goalDurationHours?: number; // in hours
-  actualDurationMinutes?: number; // in minutes
-  notes?: string;
-  status: 'active' | 'completed';
-}
-
-// New interface for client-side data to ensure serializability
-export interface ClientFastingSession {
-  id?: string;
-  userId: string;
-  startTime: string; // ISO string
-  endTime?: string | null; // ISO string
-  goalDurationHours?: number;
-  actualDurationMinutes?: number;
-  notes?: string;
-  status: 'active' | 'completed';
-}
-
-// Helper function to convert FastingSession to ClientFastingSession
-function toClientFastingSession(session: FastingSession): ClientFastingSession {
-  return {
-    ...session,
-    startTime: session.startTime.toDate().toISOString(),
-    endTime: session.endTime ? session.endTime.toDate().toISOString() : null,
-  };
-}
-
+import type { FastingSession, ClientFastingSession } from './types'; // Import from new types file
+import { toClientFastingSession } from './types'; // Import from new types file
 
 export async function startNewFast(userId: string, goalDurationHours?: number): Promise<string> {
   if (!userId) throw new Error("User ID is required.");
@@ -60,7 +29,7 @@ export async function endCurrentFast(sessionId: string, notes?: string): Promise
     throw new Error("Fasting session not found.");
   }
 
-  const sessionData = sessionDoc.data() as FastingSession;
+  const sessionData = sessionDoc.data() as FastingSession; // Firestore data is FastingSession
   const startTime = sessionData.startTime.toDate();
   const endTime = new Date();
   const actualDurationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
@@ -87,6 +56,7 @@ export async function getActiveFast(userId: string): Promise<ClientFastingSessio
   const querySnapshot = await getDocs(q);
   if (!querySnapshot.empty) {
     const docData = querySnapshot.docs[0];
+    // Ensure data from Firestore is cast to FastingSession before conversion
     const session = { id: docData.id, ...docData.data() } as FastingSession;
     return toClientFastingSession(session);
   }
@@ -106,8 +76,8 @@ export async function getFastingHistory(userId: string, count: number = 7): Prom
 
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(docData => {
+    // Ensure data from Firestore is cast to FastingSession before conversion
     const session = { id: docData.id, ...docData.data() } as FastingSession;
     return toClientFastingSession(session);
   });
 }
-
