@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, Info, Menu, BookOpenCheck } from 'lucide-react'; 
+import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, Info, Menu, BookOpenCheck, Palette } from 'lucide-react'; 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import React from 'react';
 
@@ -25,7 +25,7 @@ const Navbar = () => {
     { href: "/dicas", label: "Dicas", icon: Info },
     { href: "/guia", label: "Guia", icon: BookOpenCheck },
     { href: "/profile", label: "Perfil", icon: UserCircle },
-    { href: "/profile", label: "Configurações", icon: Settings }, // Pointing to profile as per existing setup
+    { href: "/configuracoes", label: "Configurações", icon: Settings }, 
   ];
 
   const NavLinkItem = ({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) => (

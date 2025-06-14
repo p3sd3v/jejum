@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useEffect, type ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,7 +38,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
             Suporte
           </Link>
           <p>© {new Date().getFullYear()} Seca Jejum.</p>
-          <Link href="/profile" className="flex flex-col items-center text-primary hover:text-primary/80">
+          <Link href="/configuracoes" className="flex flex-col items-center text-primary hover:text-primary/80">
             <Settings className="h-6 w-6 mb-1" />
             Configurações
           </Link>
