@@ -12,7 +12,7 @@ import {
   UserCircle, 
   Settings,
   Palette,
-  HelpCircle // Adicionado HelpCircle aqui
+  HelpCircle
 } from "lucide-react";
 
 export default function GuiaPage() {
@@ -70,7 +70,6 @@ export default function GuiaPage() {
                   <li><strong>Visualização do Cardápio:</strong> O cardápio gerado é apresentado dia a dia, com detalhes para café da manhã, almoço e jantar.</li>
                   <li><strong>Editar Preferências:</strong> Você pode ajustar suas preferências e gerar um novo cardápio a qualquer momento.</li>
                 </ul>
-                 <p className="text-xs text-muted-foreground pt-2">Importante: As sugestões da IA são um ponto de partida. Consulte um nutricionista para um plano alimentar totalmente personalizado e seguro.</p>
               </AccordionContent>
             </AccordionItem>
 
