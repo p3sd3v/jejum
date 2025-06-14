@@ -231,9 +231,6 @@ const ProfileForm: React.FC = () => {
                 <Label htmlFor="notifyOnFastEnd">Aviso quando o jejum terminar</Label>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              Obs: O envio real dos emails requer configuração de backend (Firebase Functions e serviço de email) que não está incluída.
-            </p>
           </div>
           
           <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground w-full md:w-auto" disabled={isLoading}>
