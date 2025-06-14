@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, BookOpenCheck, Palette, ShieldCheck, Lightbulb, Brain } from 'lucide-react'; // Added Brain
+import { Leaf, UserCircle, LogOut, Settings, ListChecks, Award, BookOpenCheck, Palette, ShieldCheck, Brain } from 'lucide-react'; // Added Brain
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import React from 'react';
 
 const navLinksDefinition = [
-  { href: "/dashboard", label: "Dashboard", icon: Palette }, // Changed from /dashboard to /dashboard, and icon
+  { href: "/dashboard", label: "Meu Jejum", icon: Palette }, // Changed from /dashboard to /dashboard, and icon
   { href: "/planejamento", label: "Planejamento", icon: ListChecks },
   { href: "/progresso", label: "Progresso", icon: Award },
   { href: "/desafios", label: "Desafios", icon: ShieldCheck },
