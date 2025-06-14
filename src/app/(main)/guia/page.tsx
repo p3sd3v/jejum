@@ -11,7 +11,8 @@ import {
   Brain, 
   UserCircle, 
   Settings,
-  Palette
+  Palette,
+  HelpCircle // Adicionado HelpCircle aqui
 } from "lucide-react";
 
 export default function GuiaPage() {
@@ -39,7 +40,7 @@ export default function GuiaPage() {
             <AccordionItem value="meu-jejum" className="border border-border rounded-lg">
               <AccordionTrigger className="p-4 hover:no-underline text-lg font-semibold text-primary">
                 <div className="flex items-center">
-                  <LayoutDashboard className="mr-3 h-6 w-6" /> Meu Jejum (Dashboard)
+                  <Palette className="mr-3 h-6 w-6" /> Meu Jejum (Dashboard)
                 </div>
               </AccordionTrigger>
               <AccordionContent className="p-4 pt-0 text-foreground/90 space-y-2">
