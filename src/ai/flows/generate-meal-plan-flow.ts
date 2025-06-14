@@ -7,6 +7,8 @@
  * - generateMealPlan - A function that handles the meal plan generation process.
  * - GenerateMealPlanInput - The input type for the generateMealPlan function.
  * - GenerateMealPlanOutput - The return type for the generateMealPlan function.
+ * - DailyMealPlan - The type for a single day's meal plan.
+ * - Meal - The type for an individual meal.
  */
 
 import {ai} from '@/ai/genkit';
@@ -16,13 +18,14 @@ const MealSchema = z.object({
   name: z.string().describe('O nome da refeição (ex: Café da manhã, Almoço, Lanche, Jantar).'),
   description: z.string().describe('A descrição detalhada da refeição, incluindo os principais ingredientes e uma breve sugestão de preparo se aplicável.'),
 });
+export type Meal = z.infer<typeof MealSchema>;
 
 const DailyMealPlanSchema = z.object({
   day: z.string().describe('O dia do plano (ex: Dia 1, Segunda-feira).'),
   meals: z.array(MealSchema).describe('Uma lista de refeições para o dia.'),
 });
+export type DailyMealPlan = z.infer<typeof DailyMealPlanSchema>;
 
-// Schemas are defined but NOT exported as constants
 const GenerateMealPlanInputSchema = z.object({
   dietType: z.string().optional().describe('O tipo de dieta preferida pelo usuário (ex: equilibrada, low-carb, vegan, keto).'),
   foodIntolerances: z.string().optional().describe('Uma string com intolerâncias alimentares separadas por vírgula (ex: glúten, lactose).'),
@@ -36,10 +39,6 @@ const GenerateMealPlanOutputSchema = z.object({
   disclaimer: z.string().optional().describe('Um aviso sobre as sugestões serem geradas por IA e a importância de consultar um profissional.'),
 });
 export type GenerateMealPlanOutput = z.infer<typeof GenerateMealPlanOutputSchema>;
-
-// Os tipos Meal e DailyMealPlan não são mais exportados diretamente daqui.
-// Eles são parte do GenerateMealPlanOutput e podem ser inferidos ou re-exportados
-// a partir do mealPlanActions.ts se necessário para uso direto no frontend.
 
 export async function generateMealPlan(input: GenerateMealPlanInput): Promise<GenerateMealPlanOutput> {
   return generateMealPlanFlow(input);
@@ -77,7 +76,6 @@ const generateMealPlanFlow = ai.defineFlow(
     outputSchema: GenerateMealPlanOutputSchema,
   },
   async (input) => {
-    // Adiciona um disclaimer padrão se a IA não gerar um
     const defaultDisclaimer = "Lembre-se: este cardápio é uma sugestão gerada por IA e não substitui o aconselhamento de um nutricionista ou profissional de saúde. Adapte-o às suas necessidades e consulte um especialista.";
 
     const {output} = await prompt(input);
