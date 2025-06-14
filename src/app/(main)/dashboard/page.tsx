@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const { currentUser } = useAuth();
   const [historyKey, setHistoryKey] = useState(0);
   const [weightChartKey, setWeightChartKey] = useState(0);
-  const [isWeightDialogValid, setIsWeightDialogValidad] = useState(false);
+  const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
   const [currentFastingProgress, setCurrentFastingProgress] = useState(0);
   const [fastingGoalHours, setFastingGoalHours] = useState<number | undefined>(undefined);
 
@@ -36,7 +36,7 @@ export default function DashboardPage() {
 
   const handleWeightAdded = () => {
     setWeightChartKey(prevKey => prevKey + 1);
-    setIsWeightDialogValidad(false); // Close dialog
+    setIsWeightDialogOpen(false); // Close dialog
   };
 
   const handleBeberAgua = () => {
@@ -84,7 +84,7 @@ export default function DashboardPage() {
             </CardTitle>
             <CardDescription className="text-muted-foreground">Acompanhe sua jornada de perda de peso.</CardDescription>
           </div>
-          <Dialog open={isWeightDialogValidad} onOpenChange={setIsWeightDialogValidad}>
+          <Dialog open={isWeightDialogOpen} onOpenChange={setIsWeightDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="ml-auto border-primary text-primary hover:bg-primary/10">
                 <PlusCircle className="mr-2 h-4 w-4" /> Registrar Peso
@@ -98,7 +98,7 @@ export default function DashboardPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4">
-                <AddWeightEntryForm onWeightAdded={handleWeightAdded} onOpenChange={setIsWeightDialogValidad} />
+                <AddWeightEntryForm onWeightAdded={handleWeightAdded} onOpenChange={setIsWeightDialogOpen} />
               </div>
             </DialogContent>
           </Dialog>
