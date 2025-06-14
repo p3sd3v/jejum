@@ -1,8 +1,10 @@
 
 "use server";
 import { db } from '@/lib/firebase';
-import { collection, addDoc, query, where, orderBy, getDocs, Timestamp, serverTimestamp, limit } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, getDocs, Timestamp, serverTimestamp, limit, doc, getDoc, updateDoc } from 'firebase/firestore';
 
+// Note: FastingSession and related functions are duplicated from fastingActions.ts
+// Consider moving to a shared types file if they are truly identical.
 export interface FastingSession {
   id?: string;
   userId: string;
@@ -14,7 +16,6 @@ export interface FastingSession {
   status: 'active' | 'completed';
 }
 
-// New interface for client-side data to ensure serializability
 export interface ClientFastingSession {
   id?: string;
   userId: string;
@@ -26,7 +27,6 @@ export interface ClientFastingSession {
   status: 'active' | 'completed';
 }
 
-// Helper function to convert FastingSession to ClientFastingSession
 function toClientFastingSession(session: FastingSession): ClientFastingSession {
   return {
     ...session,
@@ -35,36 +35,29 @@ function toClientFastingSession(session: FastingSession): ClientFastingSession {
   };
 }
 
-
 export async function startNewFast(userId: string, goalDurationHours?: number): Promise<string> {
   if (!userId) throw new Error("User ID is required.");
-
   const newFast: Omit<FastingSession, 'id' | 'startTime'> & { startTime: Timestamp } = {
     userId,
     startTime: Timestamp.now(),
     status: 'active',
     goalDurationHours: goalDurationHours,
   };
-
   const docRef = await addDoc(collection(db, 'fasting_sessions'), newFast);
   return docRef.id;
 }
 
 export async function endCurrentFast(sessionId: string, notes?: string): Promise<void> {
   if (!sessionId) throw new Error("Session ID is required.");
-
   const sessionRef = doc(db, 'fasting_sessions', sessionId);
   const sessionDoc = await getDoc(sessionRef);
-
   if (!sessionDoc.exists()) {
     throw new Error("Fasting session not found.");
   }
-
   const sessionData = sessionDoc.data() as FastingSession;
   const startTime = sessionData.startTime.toDate();
   const endTime = new Date();
   const actualDurationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-
   await updateDoc(sessionRef, {
     endTime: Timestamp.fromDate(endTime),
     status: 'completed',
@@ -75,7 +68,6 @@ export async function endCurrentFast(sessionId: string, notes?: string): Promise
 
 export async function getActiveFast(userId: string): Promise<ClientFastingSession | null> {
   if (!userId) return null;
-
   const q = query(
     collection(db, 'fasting_sessions'),
     where('userId', '==', userId),
@@ -83,7 +75,6 @@ export async function getActiveFast(userId: string): Promise<ClientFastingSessio
     orderBy('startTime', 'desc'),
     limit(1)
   );
-
   const querySnapshot = await getDocs(q);
   if (!querySnapshot.empty) {
     const docData = querySnapshot.docs[0];
@@ -95,7 +86,6 @@ export async function getActiveFast(userId: string): Promise<ClientFastingSessio
 
 export async function getFastingHistory(userId: string, count: number = 7): Promise<ClientFastingSession[]> {
   if (!userId) return [];
-  
   const q = query(
     collection(db, 'fasting_sessions'),
     where('userId', '==', userId),
@@ -103,7 +93,6 @@ export async function getFastingHistory(userId: string, count: number = 7): Prom
     orderBy('startTime', 'desc'),
     limit(count)
   );
-
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(docData => {
     const session = { id: docData.id, ...docData.data() } as FastingSession;
@@ -112,11 +101,12 @@ export async function getFastingHistory(userId: string, count: number = 7): Prom
 }
 
 
+// Weight Entry specific types and functions
 export interface WeightEntry {
   id?: string;
   userId: string;
   weight: number; // in kg or lbs, be consistent
-  date: Timestamp;
+  date: Timestamp; // Firestore Timestamp
   unit?: 'kg' | 'lbs';
 }
 
@@ -128,6 +118,7 @@ export interface ClientWeightEntry {
   unit?: 'kg' | 'lbs';
 }
 
+// Helper to convert Firestore Timestamp to Date object for client-side use
 function toClientWeightEntry(entry: WeightEntry): ClientWeightEntry {
   return {
     ...entry,
@@ -139,61 +130,68 @@ export async function addWeightEntry(userId: string, weight: number, entryDate?:
   if (!userId) throw new Error("User ID is required.");
   if (weight <= 0) throw new Error("Weight must be a positive number.");
 
-  const newEntry: Omit<WeightEntry, 'id' | 'date'> & { date: Timestamp } = {
+  const newEntryData: Omit<WeightEntry, 'id' | 'date'> & { date: Timestamp } = {
     userId,
     weight,
     date: entryDate ? Timestamp.fromDate(entryDate) : Timestamp.now(),
     unit,
   };
-  const docRef = await addDoc(collection(db, 'weight_entries'), newEntry);
+  const docRef = await addDoc(collection(db, 'weight_entries'), newEntryData);
   return docRef.id;
 }
 
 export async function getWeightHistory(
   userId: string,
-  limitCount: number = 90 // Fetch up to 90 entries for client-side aggregation
+  limitCount: number = 90
 ): Promise<ClientWeightEntry[]> {
   if (!userId) return [];
 
   try {
+    // Simplified query: fetch all entries for the user.
+    // This requires a simple index on 'userId' (ASC), which Firestore often handles automatically.
     const q = query(
       collection(db, 'weight_entries'),
-      where('userId', '==', userId),
-      orderBy('date', 'desc'), 
-      limit(limitCount)
+      where('userId', '==', userId)
     );
 
     const querySnapshot = await getDocs(q);
-    const entries = querySnapshot.docs.map(doc => {
-      const data = doc.data() as WeightEntry;
-      return toClientWeightEntry({ ...data, id: doc.id });
-    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()); 
 
-    return entries;
+    // Map Firestore documents to an intermediate array, converting Timestamp to Date object for sorting.
+    const allUserEntries = querySnapshot.docs.map(docSnapshot => {
+      const data = docSnapshot.data() as Omit<WeightEntry, 'id' | 'date'> & { date: Timestamp }; // Ensure date is Timestamp
+      return {
+        id: docSnapshot.id,
+        userId: data.userId,
+        weight: data.weight,
+        date: data.date, // Keep as Firestore Timestamp for now
+        unit: data.unit,
+        dateObj: data.date.toDate(), // Convert to JS Date for sorting
+      };
+    });
+
+    // Sort all entries by date descending (newest first) using JS Date objects.
+    allUserEntries.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+
+    // Take the most recent 'limitCount' entries.
+    const latestEntries = allUserEntries.slice(0, limitCount);
+
+    // Convert these selected entries to ClientWeightEntry format (which converts Timestamp to ISO string).
+    // Then, sort them by date ascending for the chart.
+    const clientEntries = latestEntries
+      .map(entry => toClientWeightEntry({
+        id: entry.id,
+        userId: entry.userId,
+        weight: entry.weight,
+        date: entry.date, // Pass the original Firestore Timestamp to toClientWeightEntry
+        unit: entry.unit,
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return clientEntries;
+
   } catch (error: any) {
-    if (error.code === 'failed-precondition' && error.message && error.message.includes('requires an index')) {
-      console.error("****************************************************************************************************");
-      console.error("FIRESTORE INDEX REQUIRED - PLEASE FOLLOW THESE STEPS:");
-      console.error("The current Firestore query needs a composite index that hasn't been created yet.");
-      console.error("You can usually create this index by following the link provided in the original error message, OR manually:");
-      console.error("1. Go to your Firebase project console.");
-      console.error("2. Navigate to Firestore Database -> Indexes tab.");
-      console.error("3. Click 'Add composite index' (or 'Start query' then 'Save Index' if using the query builder).");
-      console.error("4. Set Collection ID to: 'weight_entries'");
-      console.error("5. Add the following fields to the index IN THIS ORDER:");
-      console.error("   - Field path: 'userId', Query scope: Collection, Array support: No, Order: Ascending");
-      console.error("   - Field path: 'date', Query scope: Collection, Array support: No, Order: Descending  <-- IMPORTANT: DESCENDING ORDER FOR DATE");
-      console.error("6. Click 'Create Index'. The index will take a few minutes to build.");
-      console.error("   After the index status is 'Enabled', your query should work.");
-      let directLink = "Could not extract link from error. Check the original browser console error for a direct link to create the index.";
-      const linkMatch = error.message.match(/https?:\/\/[^\s]+/);
-      if (linkMatch && linkMatch[0]) {
-        directLink = `Direct link from error: ${linkMatch[0]}`;
-      }
-      console.error(directLink);
-      console.error("****************************************************************************************************");
-    }
-    // Re-throw the original error to allow for other error handling or display
-    throw error;
+    console.error("Error fetching weight history:", error);
+    // Re-throw the original error or a custom error
+    throw new Error(`Failed to fetch weight history: ${error.message}`);
   }
 }
