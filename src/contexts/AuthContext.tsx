@@ -3,8 +3,7 @@
 import type { User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { LogOut } from 'lucide-react'; // Placeholder, actual logout is a function
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -26,20 +25,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  const logout = async () => {
+  const logoutCallback = useCallback(async () => {
     try {
       await auth.signOut();
     } catch (error) {
       console.error("Error signing out: ", error);
       // Optionally show a toast message for error
     }
-  };
+  }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     currentUser,
     loading,
-    logout,
-  };
+    logout: logoutCallback,
+  }), [currentUser, loading, logoutCallback]);
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
