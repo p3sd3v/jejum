@@ -113,7 +113,7 @@ const AISuggestionForm: React.FC = () => {
               if (unsubscribe) unsubscribe();
             }
           } else {
-             console.warn("Suggestion document data is malformed or missing Timestamps, cannot process update:", docSnap.id, data);
+             console.warn("Suggestion document data is malformed or missing Timestamps, cannot process update:", docSnap.id, JSON.stringify(data, null, 2));
              // Optionally, set status to error if data is unusable
           }
         } else {
@@ -300,7 +300,7 @@ const AISuggestionForm: React.FC = () => {
             Histórico de Sugestões
           </CardTitle>
           <CardDescription>
-            Aqui são exibidas todas as suas solicitações de sugestões, com seus respectivos status.
+            Aqui são exibidas todas as suas solicitações de sugestões da IA, com seus respectivos status.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -323,9 +323,7 @@ const AISuggestionForm: React.FC = () => {
                          'Erro'}
                       </Badge>
                     </div>
-                    <p className="text-xs text-foreground/80 mb-1 break-words">
-                      <span className="font-medium">Perfil Usado:</span> Idade {item.userInput.age}, {item.userInput.gender}, Nível Ativ: {item.userInput.activityLevel}. Exp. Jejum: {item.userInput.fastingExperience}.
-                    </p>
+                    {/* "Perfil Usado" section removed as per request */}
                     {item.status === 'completed' && item.suggestionOutput && (
                       <div className="mt-2 pt-2 border-t border-border/50">
                         <p className="text-sm"><strong className="font-medium text-primary">Sugestão:</strong> Início: {item.suggestionOutput.suggestedStartTime}, Fim: {item.suggestionOutput.suggestedEndTime}</p>
@@ -358,6 +356,3 @@ const AISuggestionForm: React.FC = () => {
 };
 
 export default AISuggestionForm;
-
-
-    
