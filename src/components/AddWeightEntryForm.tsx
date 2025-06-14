@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -28,10 +28,10 @@ type AddWeightFormValues = z.infer<typeof addWeightSchema>;
 
 interface AddWeightEntryFormProps {
   onWeightAdded?: () => void;
-  onOpenChange?: (open: boolean) => void;
+  // onOpenChange prop is removed as this form will be inline
 }
 
-const AddWeightEntryForm: React.FC<AddWeightEntryFormProps> = ({ onWeightAdded, onOpenChange }) => {
+const AddWeightEntryForm: React.FC<AddWeightEntryFormProps> = ({ onWeightAdded }) => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +41,7 @@ const AddWeightEntryForm: React.FC<AddWeightEntryFormProps> = ({ onWeightAdded, 
     defaultValues: {
       date: new Date(),
       unit: 'kg',
+      weight: undefined, // Ensure weight is initially undefined for the placeholder
     },
   });
 
@@ -52,13 +53,10 @@ const AddWeightEntryForm: React.FC<AddWeightEntryFormProps> = ({ onWeightAdded, 
     setIsLoading(true);
     try {
       await addWeightEntry(currentUser.uid, data.weight, data.date, data.unit);
-      toast({ title: "Sucesso!", description: "Peso registrado com sucesso." });
+      toast({ title: "Sucesso!", description: "Peso registrado com sucesso.", className: "bg-success text-success-foreground" });
       form.reset({ date: new Date(), weight: undefined, unit: 'kg' });
       if (onWeightAdded) {
         onWeightAdded();
-      }
-      if (onOpenChange) {
-        onOpenChange(false); // Close dialog on success
       }
     } catch (error: any) {
       toast({ title: "Erro ao Registrar Peso", description: error.message || "Tente novamente.", variant: "destructive" });
@@ -68,43 +66,38 @@ const AddWeightEntryForm: React.FC<AddWeightEntryFormProps> = ({ onWeightAdded, 
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <Label htmlFor="weight">Peso ({form.watch('unit')})</Label>
-        <Input id="weight" type="number" step="0.1" {...form.register('weight')} placeholder={`Ex: 70.5`} disabled={isLoading} />
+        <Label htmlFor="weight" className="sr-only">Peso ({form.watch('unit')})</Label>
+        <Input 
+          id="weight" 
+          type="number" 
+          step="0.1" 
+          {...form.register('weight')} 
+          placeholder={`Digite seu peso (ex: 70.5 ${form.watch('unit')})`} 
+          disabled={isLoading} 
+          className="text-lg p-3"
+        />
         {form.formState.errors.weight && <p className="text-sm text-destructive mt-1">{form.formState.errors.weight.message}</p>}
       </div>
       
-      {/* Hidden unit select for now, defaulting to KG. Could be exposed later.
       <div>
-        <Label htmlFor="unit">Unidade</Label>
-        <Select onValueChange={(value) => form.setValue('unit', value as 'kg' | 'lbs')} defaultValue={form.getValues('unit')} disabled={isLoading}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="kg">kg (quilogramas)</SelectItem>
-            <SelectItem value="lbs">lbs (libras)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      */}
-
-      <div>
-        <Label htmlFor="date">Data</Label>
+        <Label htmlFor="date" className="sr-only">Data</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant={"outline"}
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "w-full justify-start text-left font-normal text-lg p-3",
                 !form.watch('date') && "text-muted-foreground"
               )}
               disabled={isLoading}
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
+              <CalendarIcon className="mr-2 h-5 w-5" />
               {form.watch('date') ? format(form.watch('date'), "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-card">
+          <PopoverContent className="w-auto p-0 bg-card border-border shadow-lg">
             <Calendar
               mode="single"
               selected={form.watch('date')}
@@ -118,12 +111,14 @@ const AddWeightEntryForm: React.FC<AddWeightEntryFormProps> = ({ onWeightAdded, 
         {form.formState.errors.date && <p className="text-sm text-destructive mt-1">{form.formState.errors.date.message}</p>}
       </div>
 
-      <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
-        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-        Registrar Peso
+      <Button type="submit" className="w-full bg-success hover:bg-success/90 text-success-foreground text-lg py-6" disabled={isLoading || !currentUser?.uid}>
+        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+        Salvar Peso
       </Button>
     </form>
   );
 };
 
 export default AddWeightEntryForm;
+
+    

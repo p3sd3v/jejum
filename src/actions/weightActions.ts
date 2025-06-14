@@ -147,8 +147,6 @@ export async function getWeightHistory(
   if (!userId) return [];
 
   try {
-    // Simplified query: fetch all entries for the user.
-    // This requires a simple index on 'userId' (ASC), which Firestore often handles automatically.
     const q = query(
       collection(db, 'weight_entries'),
       where('userId', '==', userId)
@@ -156,33 +154,27 @@ export async function getWeightHistory(
 
     const querySnapshot = await getDocs(q);
 
-    // Map Firestore documents to an intermediate array, converting Timestamp to Date object for sorting.
     const allUserEntries = querySnapshot.docs.map(docSnapshot => {
-      const data = docSnapshot.data() as Omit<WeightEntry, 'id' | 'date'> & { date: Timestamp }; // Ensure date is Timestamp
+      const data = docSnapshot.data() as Omit<WeightEntry, 'id' | 'date'> & { date: Timestamp }; 
       return {
         id: docSnapshot.id,
         userId: data.userId,
         weight: data.weight,
-        date: data.date, // Keep as Firestore Timestamp for now
+        date: data.date, 
         unit: data.unit,
-        dateObj: data.date.toDate(), // Convert to JS Date for sorting
+        dateObj: data.date.toDate(), 
       };
     });
 
-    // Sort all entries by date descending (newest first) using JS Date objects.
     allUserEntries.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
-
-    // Take the most recent 'limitCount' entries.
     const latestEntries = allUserEntries.slice(0, limitCount);
 
-    // Convert these selected entries to ClientWeightEntry format (which converts Timestamp to ISO string).
-    // Then, sort them by date ascending for the chart.
     const clientEntries = latestEntries
       .map(entry => toClientWeightEntry({
         id: entry.id,
         userId: entry.userId,
         weight: entry.weight,
-        date: entry.date, // Pass the original Firestore Timestamp to toClientWeightEntry
+        date: entry.date, 
         unit: entry.unit,
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -191,7 +183,66 @@ export async function getWeightHistory(
 
   } catch (error: any) {
     console.error("Error fetching weight history:", error);
-    // Re-throw the original error or a custom error
+    if (error.code === 'failed-precondition') {
+        console.error(
+        `Firestore Index Required: This query needs a composite index. 
+        Please create it in your Firebase console:
+        1. Go to Firestore Database -> Indexes.
+        2. Click "Add Index" or "Create Index".
+        3. Collection ID: 'weight_entries'.
+        4. Fields to index:
+           - 'userId', Order: Ascending
+           - 'date', Order: Descending  <--- IMPORTANT: Make sure 'date' is Descending.
+        5. Query scopes: Collection (not Collection group unless you need it for other queries).
+        6. Click "Create". Index creation may take a few minutes.
+        Alternatively, the error message in the browser console usually provides a direct link to create the index.`
+        );
+    }
     throw new Error(`Failed to fetch weight history: ${error.message}`);
   }
 }
+
+export async function getLatestWeightEntry(userId: string): Promise<ClientWeightEntry | null> {
+  if (!userId) return null;
+  try {
+    const q = query(collection(db, 'weight_entries'), where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return null;
+    }
+
+    const allUserEntries = querySnapshot.docs.map(docSnapshot => {
+      const data = docSnapshot.data() as Omit<WeightEntry, 'id' | 'date'> & { date: Timestamp };
+      return {
+        id: docSnapshot.id,
+        userId: data.userId,
+        weight: data.weight,
+        date: data.date, // Keep as Firestore Timestamp for now
+        unit: data.unit,
+        dateObj: data.date.toDate(), // For sorting
+      };
+    });
+
+    if (allUserEntries.length === 0) return null;
+
+    allUserEntries.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+    
+    const latestFirestoreEntry = allUserEntries[0];
+    
+    return toClientWeightEntry({
+        id: latestFirestoreEntry.id,
+        userId: latestFirestoreEntry.userId,
+        weight: latestFirestoreEntry.weight,
+        date: latestFirestoreEntry.date, // Pass the original Firestore Timestamp
+        unit: latestFirestoreEntry.unit,
+    });
+
+  } catch (error: any)
+{
+    console.error("Error fetching latest weight entry:", error);
+    return null; 
+  }
+}
+
+    

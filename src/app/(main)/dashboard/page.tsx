@@ -1,136 +1,107 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FastingTimer from '@/components/FastingTimer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Droplet, Zap, TrendingUp, PlusCircle } from 'lucide-react';
 import WeightProgressChart from '@/components/WeightProgressChart';
 import AddWeightEntryForm from '@/components/AddWeightEntryForm';
 import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-
+import { getLatestWeightEntry, type ClientWeightEntry } from '@/actions/weightActions';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { currentUser } = useAuth();
-  const [historyKey, setHistoryKey] = useState(0);
+  const [historyKey, setHistoryKey] = useState(0); // To refresh FastingHistory, if we add it back
   const [weightChartKey, setWeightChartKey] = useState(0);
-  const [isWeightDialogOpen, setIsWeightDialogOpen] = useState(false);
-  const [currentFastingProgress, setCurrentFastingProgress] = useState(0);
-  const [fastingGoalHours, setFastingGoalHours] = useState<number | undefined>(undefined);
+  const [latestWeight, setLatestWeight] = useState<ClientWeightEntry | null>(null);
+  const [isLoadingLatestWeight, setIsLoadingLatestWeight] = useState(true);
 
-  const handleTimerUpdate = (progress: number, goalHours?: number) => {
-    setCurrentFastingProgress(progress);
-    if (goalHours !== undefined) {
-      setFastingGoalHours(goalHours);
+  const fetchLatestWeight = useCallback(async () => {
+    if (currentUser?.uid) {
+      setIsLoadingLatestWeight(true);
+      try {
+        const weight = await getLatestWeightEntry(currentUser.uid);
+        setLatestWeight(weight);
+      } catch (error) {
+        console.error("Failed to fetch latest weight", error);
+        setLatestWeight(null);
+      } finally {
+        setIsLoadingLatestWeight(false);
+      }
     }
-  };
+  }, [currentUser]);
 
-  const handleFastEnded = () => {
+  useEffect(() => {
+    fetchLatestWeight();
+  }, [fetchLatestWeight]);
+
+  const handleFastingStateChanged = () => {
+    // This function can be used to refresh any data related to fasting if needed
+    // For example, if FastingHistory component is on this page:
     setHistoryKey(prevKey => prevKey + 1);
-    setCurrentFastingProgress(0); 
-    setFastingGoalHours(undefined); 
+    // Potentially refresh other fasting related data
   };
 
   const handleWeightAdded = () => {
-    setWeightChartKey(prevKey => prevKey + 1);
-    setIsWeightDialogOpen(false); // Close dialog
-  };
-
-  const handleBeberAgua = () => {
-    alert("Lembrete: Mantenha-se hidratado!");
-  };
-
-  const handleMotivacao = () => {
-    alert("Motivação do Dia: Você é capaz!");
+    setWeightChartKey(prevKey => prevKey + 1); // Refreshes the chart
+    fetchLatestWeight(); // Refreshes the "latest weight" display
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-card shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-xl font-headline text-foreground">Seu Jejum Atual</CardTitle>
+    <div className="space-y-6 md:space-y-8 py-6">
+      <Card className="bg-card shadow-xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-headline text-foreground">Cronômetro do Jejum</CardTitle>
+          {/* Description can be dynamic based on fasting state */}
         </CardHeader>
         <CardContent>
           <FastingTimer 
-            onFastEnded={handleFastEnded} 
-            onTimerUpdate={handleTimerUpdate} 
+            onFastStateChanged={handleFastingStateChanged}
           />
         </CardContent>
       </Card>
 
-      <Card className="bg-card shadow-lg">
+      <Card className="bg-card shadow-xl">
         <CardHeader>
-          <CardTitle className="text-xl font-headline text-foreground">Progresso do Jejum</CardTitle>
-          {fastingGoalHours !== undefined && currentFastingProgress >= 0 && ( // Show even if 0%
-            <CardDescription className="text-muted-foreground">Meta: {fastingGoalHours} horas</CardDescription>
+          <CardTitle className="text-xl font-headline text-foreground">Registre seu Peso de Hoje</CardTitle>
+          {isLoadingLatestWeight ? (
+            <div className="text-sm text-muted-foreground flex items-center mt-1">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando último peso...
+            </div>
+          ) : latestWeight ? (
+            <CardDescription className="text-muted-foreground mt-1">
+              Último registro: {latestWeight.weight}{latestWeight.unit || 'kg'} em {format(new Date(latestWeight.date), "dd/MM/yyyy", { locale: ptBR })}.
+            </CardDescription>
+          ) : (
+            <CardDescription className="text-muted-foreground mt-1">
+              Nenhum peso registrado ainda.
+            </CardDescription>
           )}
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Progress value={currentFastingProgress} className="w-full h-3 [&>div]:bg-primary" />
-          <p className="text-sm text-center text-muted-foreground">
-            {currentFastingProgress > 0 ? `${currentFastingProgress.toFixed(0)}% completo` : (activeFastingGoal() ? 'Pronto para começar sua meta!' : 'Nenhum jejum ativo.')}
-          </p>
+        <CardContent>
+          <AddWeightEntryForm onWeightAdded={handleWeightAdded} />
         </CardContent>
       </Card>
 
-      <Card className="bg-card shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-xl font-headline text-foreground flex items-center">
-              <TrendingUp className="mr-2 h-6 w-6 text-primary" /> Progresso de Emagrecimento
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">Acompanhe sua jornada de perda de peso.</CardDescription>
-          </div>
-          <Dialog open={isWeightDialogOpen} onOpenChange={setIsWeightDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-auto border-primary text-primary hover:bg-primary/10">
-                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Peso
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-card">
-              <DialogHeader>
-                <DialogTitle className="font-headline text-foreground">Registrar Novo Peso</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Adicione sua medição de peso atual e a data.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="py-4">
-                <AddWeightEntryForm onWeightAdded={handleWeightAdded} onOpenChange={setIsWeightDialogOpen} />
-              </div>
-            </DialogContent>
-          </Dialog>
+      <Card className="bg-card shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl font-headline text-foreground">Progresso de Emagrecimento</CardTitle>
+          <CardDescription className="text-muted-foreground">Acompanhe sua jornada de perda de peso.</CardDescription>
         </CardHeader>
         <CardContent className="min-h-[320px] flex flex-col items-center justify-center">
           {currentUser && <WeightProgressChart key={weightChartKey} />}
           {!currentUser && <p className="text-muted-foreground">Carregando dados do usuário...</p>}
         </CardContent>
       </Card>
-
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-background rounded-lg shadow">
-        <Button
-          onClick={handleBeberAgua}
-          className="bg-success hover:bg-success/90 text-success-foreground text-base py-6"
-        >
-          <Droplet className="mr-2 h-5 w-5" />
-          Beber Água
-        </Button>
-        <Button
-          onClick={handleMotivacao}
-          className="bg-accent hover:bg-accent/90 text-accent-foreground text-base py-6"
-        >
-          <Zap className="mr-2 h-5 w-5" />
-          Motivação do Dia
-        </Button>
-      </section>
+      
+      <div className="text-xs text-muted-foreground p-4 text-center border-t border-border mt-8">
+        <p>Lembretes e notificações (como iniciar jejum, registrar peso, terminar jejum) seriam gerenciados via Firebase Cloud Messaging (requer configuração de backend e Firebase Functions).</p>
+      </div>
     </div>
   );
-
-  function activeFastingGoal() {
-    // This helper can be expanded if you have a way to know if a fast is active
-    // For now, it just checks if goalHours is set.
-    return fastingGoalHours !== undefined;
-  }
 }
+
+    
