@@ -17,6 +17,11 @@ export interface UserProfile {
     dailyRoutine?: string;
     fastingExperience?: string;
   };
+  mealPreferences?: {
+    dietType?: string; // e.g., 'balanced', 'low-carb', 'vegan', 'keto'
+    foodIntolerances?: string; // comma-separated string
+    calorieGoal?: number;
+  };
 }
 
 export async function createUserProfile(user: User, additionalData: Partial<UserProfile> = {}): Promise<void> {
@@ -43,7 +48,6 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 export async function updateUserProfile(userId: string, data: Partial<UserProfile>): Promise<void> {
   if (!userId) throw new Error("User ID is required to update profile.");
   const userRef = doc(db, 'user_profiles', userId);
-  // Use setDoc with merge: true to create the document if it doesn't exist, or update/merge if it does.
   await setDoc(userRef, data, { merge: true });
 }
 
@@ -61,8 +65,11 @@ export async function updateUserAIProfile(userId: string, aiProfileData: UserPro
   await updateUserProfile(userId, { aiProfile: aiProfileData });
 }
 
-// Ensure profile is created on first login/signup
-// This could be called client-side after successful auth or via a trigger
+export async function updateUserMealPreferences(userId: string, preferences: UserProfile['mealPreferences']): Promise<void> {
+  if (!userId) throw new Error("User ID is required.");
+  await updateUserProfile(userId, { mealPreferences: preferences });
+}
+
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     const profile = await getUserProfile(user.uid);
