@@ -2,7 +2,8 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getFastingHistory, type ClientFastingSession } from '@/actions/fastingActions'; // Use ClientFastingSession
+import { getFastingHistory } from '@/actions/fastingActions';
+import type { ClientFastingSession } from '@/actions/types'; // Use ClientFastingSession
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
