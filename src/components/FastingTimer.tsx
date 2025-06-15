@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { startNewFast, endCurrentFast, getActiveFast, type ClientFastingSession } from '@/actions/fastingActions';
+import { startNewFast, endCurrentFast, getActiveFast } from '@/actions/fastingActions';
+import type { ClientFastingSession } from '@/actions/types'; // Corrected import path
 import { getUserProfile, type UserProfile } from '@/actions/userProfileActions';
 import { PlayCircle, StopCircle, Hourglass, Loader2, Target } from 'lucide-react';
 import { Input } from './ui/input';
@@ -221,5 +222,3 @@ const FastingTimer: React.FC<FastingTimerProps> = ({ onFastStateChanged }) => {
 };
 
 export default FastingTimer;
-
-    
