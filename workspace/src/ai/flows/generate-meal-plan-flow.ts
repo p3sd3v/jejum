@@ -76,6 +76,7 @@ const generateMealPlanFlow = ai.defineFlow(
     outputSchema: GenerateMealPlanOutputSchema,
   },
   async (input) => {
+    // Adiciona um disclaimer padrão se a IA não gerar um
     const defaultDisclaimer = "Lembre-se: este cardápio é uma sugestão gerada por IA e não substitui o aconselhamento de um nutricionista ou profissional de saúde. Adapte-o às suas necessidades e consulte um especialista.";
 
     const {output} = await prompt(input);
@@ -86,3 +87,4 @@ const generateMealPlanFlow = ai.defineFlow(
     return output || { mealPlan: [], disclaimer: defaultDisclaimer };
   }
 );
+

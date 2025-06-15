@@ -5,7 +5,8 @@
 import React, { useEffect, useState }
 from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getFastingHistory, type ClientFastingSession } from '@/actions/fastingActions';
+import { getFastingHistory } from '@/actions/fastingActions';
+import type { ClientFastingSession } from '@/actions/types'; // Corrected import path
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, CheckCircle2, XCircle, Zap, ShieldCheck, CalendarClock } from 'lucide-react';

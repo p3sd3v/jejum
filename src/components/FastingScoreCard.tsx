@@ -3,7 +3,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getFastingHistory, type ClientFastingSession } from '@/actions/fastingActions';
+import { getFastingHistory } from '@/actions/fastingActions';
+import type { ClientFastingSession } from '@/actions/types'; // Corrected import path
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, TrendingUp, Target, Award, Zap } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';

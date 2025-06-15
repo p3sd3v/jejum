@@ -3,7 +3,7 @@
 import type { User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, type ReactNode, useCallback, useMemo } from 'react';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logout: logoutCallback,
   }), [currentUser, loading, logoutCallback]);
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {
