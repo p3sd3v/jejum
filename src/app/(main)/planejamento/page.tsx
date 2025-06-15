@@ -15,8 +15,8 @@ import {
   processMealPlanRequestAction, 
   getAIMealPlanRequestHistory,
   countTodaysMealPlanRequests
-} from '@/actions/mealPlanActions'; // Corrected import
-import type { DailyMealPlan } from '@/ai/flows/generate-meal-plan-flow'; // Direct import
+} from '@/actions/mealPlanActions';
+import type { DailyMealPlan } from '@/ai/flows/generate-meal-plan-flow';
 import type { ClientAIMealPlanRequest, AIMealPlanRequest } from '@/actions/aiMealPlanRequestTypes';
 import { toClientAIMealPlanRequest } from '@/actions/aiMealPlanRequestTypes';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +44,7 @@ export default function PlanejamentoPage() {
   const [isFetchingProfile, setIsFetchingProfile] = useState(true);
   const [todaysRequestsCount, setTodaysRequestsCount] = useState(0);
   const [isLoadingCount, setIsLoadingCount] = useState(true);
-  const [isLoadingPlan, setIsLoadingPlan] = useState(false); // Added for consistency with form check
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false);
 
   const fetchInitialData = useCallback(async () => {
     if (!currentUser) {
@@ -77,7 +77,6 @@ export default function PlanejamentoPage() {
       .then(count => setTodaysRequestsCount(count))
       .catch(err => {
         console.error("Failed to count today's requests", err);
-        // Don't show toast for this, as it's a background check
       })
       .finally(() => setIsLoadingCount(false));
 
@@ -101,13 +100,13 @@ export default function PlanejamentoPage() {
 
             if (clientData.status === 'completed') {
               toast({ title: "Cardápio Gerado!", description: "Seu cardápio personalizado está pronto.", className: "bg-success text-success-foreground" });
-              fetchInitialData(); // Refresh history and count
+              fetchInitialData(); 
               setShowForm(false);
               setIsProcessingRequest(false);
               if (unsubscribe) unsubscribe();
             } else if (clientData.status === 'error') {
               toast({ title: "Erro ao Gerar Cardápio", description: clientData.error || "Ocorreu um erro no servidor.", variant: "destructive" });
-              fetchInitialData(); // Refresh history
+              fetchInitialData(); 
               setIsProcessingRequest(false);
               if (unsubscribe) unsubscribe();
             }
@@ -155,7 +154,7 @@ export default function PlanejamentoPage() {
     
     try {
       const requestId = await createAIMealPlanRequest(currentUser.uid, userProfile.mealPreferences, 3);
-      setCurrentMealPlanRequest({ // Set a temporary client object for listener
+      setCurrentMealPlanRequest({ 
         id: requestId,
         userId: currentUser.uid,
         userInput: { 
@@ -170,14 +169,12 @@ export default function PlanejamentoPage() {
       });
       toast({ title: "Solicitação Enviada!", description: "Seu cardápio está sendo processado..." });
       
-      // Start background processing
       processMealPlanRequestAction(requestId, userProfile.mealPreferences, 3)
         .catch(procError => {
-            // Error during processing is handled by Firestore listener, but log here too
             console.error("Error triggering meal plan processing for requestId:", requestId, procError);
         });
       
-      setTodaysRequestsCount(prev => prev + 1); // Optimistically update count
+      setTodaysRequestsCount(prev => prev + 1);
 
     } catch (error: any) {
       console.error("Error creating AI meal plan request", error);
@@ -188,7 +185,7 @@ export default function PlanejamentoPage() {
   
   const handlePreferencesSaved = async () => {
     if (currentUser) {
-      setIsFetchingProfile(true); // Use a separate loading state if needed for profile specifically
+      setIsFetchingProfile(true); 
       try {
         const profile = await getUserProfile(currentUser.uid);
         setUserProfile(profile);
@@ -371,7 +368,7 @@ export default function PlanejamentoPage() {
                         <AccordionItem value="item-1">
                             <AccordionTrigger className="text-sm text-primary hover:no-underline py-1">Ver Cardápio Gerado</AccordionTrigger>
                             <AccordionContent className="pt-2 max-h-60 overflow-y-auto">
-                                <MealPlanDisplay mealPlan={item.mealPlanOutput.mealPlan} />
+                                <MealPlanDisplay mealPlan={item.mealPlanOutput.mealPlan} asCard={false} />
                                 {item.mealPlanOutput.disclaimer && <p className="text-xs text-muted-foreground mt-2 italic">{item.mealPlanOutput.disclaimer}</p>}
                             </AccordionContent>
                         </AccordionItem>
@@ -399,6 +396,3 @@ export default function PlanejamentoPage() {
     </div>
   );
 }
-
-
-    

@@ -5,11 +5,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Utensils, Salad, Soup, Coffee, ChefHat } from 'lucide-react';
-import type { DailyMealPlan } from '@/ai/flows/generate-meal-plan-flow'; // Direct import
+import type { DailyMealPlan } from '@/ai/flows/generate-meal-plan-flow';
 
 
 interface MealPlanDisplayProps {
-  mealPlan: DailyMealPlan[] | null; 
+  mealPlan: DailyMealPlan[] | null;
+  asCard?: boolean; // New prop to control Card rendering
 }
 
 const getMealIcon = (mealName: string) => {
@@ -29,21 +30,14 @@ const getMealIcon = (mealName: string) => {
   return <Utensils className="h-5 w-5 mr-2 text-primary" />;
 };
 
-const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ mealPlan }) => {
+const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ mealPlan, asCard = true }) => {
   if (!mealPlan || mealPlan.length === 0) {
-    // This component is now also used inside an accordion in history, 
-    // so it should render a message if mealPlan is empty for that specific entry.
     return (
         <p className="text-sm text-muted-foreground p-2">
             Nenhum detalhe de cardápio para exibir para esta entrada.
         </p>
     );
   }
-
-  // Determine if this is a full page display or part of history accordion
-  // For simplicity, the Card structure is kept, but could be conditionally rendered if needed.
-  const isTopLevelDisplay = React.useContext(Card)?.displayName !== "CardContent"; // Heuristic
-
 
   const content = (
      <Accordion type="single" collapsible className="w-full" defaultValue={mealPlan[0]?.day}>
@@ -71,7 +65,7 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ mealPlan }) => {
     </Accordion>
   );
 
-  if (!isTopLevelDisplay) { // If used inside another card (like history accordion)
+  if (!asCard) {
     return content;
   }
 
@@ -94,5 +88,3 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ mealPlan }) => {
 };
 
 export default MealPlanDisplay;
-
-// Example static meal plan removed as it's not used.
